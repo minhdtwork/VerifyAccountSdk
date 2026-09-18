@@ -1,0 +1,3 @@
+# Sprite của package chỉ vài KB. Để trong Git LFS thì máy nào cài package qua UPM
+# Git URL mà không có git-lfs sẽ nhận file pointer và ảnh vỡ hết.
+Runtime/Resources/OnDiVerify/Sprites/*.png !filter !diff !merge -text
