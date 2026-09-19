@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 
 namespace OnDi.VerifyAccount
@@ -78,6 +79,8 @@ namespace OnDi.VerifyAccount
 
         static VerifyAccountSettings _settings;
         static bool? _skipVisibleOverride;
+        static TMP_FontAsset _fontOverride;
+        static Material _fontMaterialOverride;
 
         public static VerifyAccountSettings Settings
         {
@@ -151,6 +154,23 @@ namespace OnDi.VerifyAccount
 
         internal static bool SkipButtonVisible => _skipVisibleOverride ?? Settings.showSkipButton;
 
+        /// <summary>
+        /// Đổi font TextMeshPro của toàn bộ chữ trong SDK lúc chạy, đè lên
+        /// <see cref="VerifyAccountSettings.uiFont"/>. Truyền <c>null</c> để quay lại font trong
+        /// Settings. Gọi lúc nào cũng được, kể cả khi form đang mở.
+        /// </summary>
+        public static void SetUiFont(TMP_FontAsset font, Material fontMaterial = null)
+        {
+            _fontOverride = font;
+            _fontMaterialOverride = fontMaterial;
+            SdkRoot.Current?.ApplyUiFont();
+        }
+
+        internal static TMP_FontAsset UiFont => _fontOverride != null ? _fontOverride : Settings.uiFont;
+
+        internal static Material UiFontMaterial =>
+            _fontOverride != null ? _fontMaterialOverride : Settings.uiFontMaterial;
+
         /// <summary>Badge 18+ nổi neo viền màn hình.</summary>
         public static class FloatButton
         {
@@ -164,6 +184,73 @@ namespace OnDi.VerifyAccount
             public static void ResetPosition() => SdkRoot.Current?.ResetBadgePosition();
 
             public static bool IsVisible => SdkRoot.Current != null && SdkRoot.Current.IsBadgeVisible;
+        }
+
+        /// <summary>
+        /// Bộ đếm thời gian chơi trong ngày. Cộng dồn thời gian thực người chơi ở trong game
+        /// (không tính lúc app chạy nền, không bị <c>Time.timeScale</c> ảnh hưởng), lưu vào
+        /// PlayerPrefs nên thoát game mở lại vẫn cộng tiếp trong cùng ngày.
+        ///
+        /// <code>
+        /// VerifyAccountSdk.Playtime.DailyLimitReached += total =>
+        ///     MyUi.ShowWarning($"Bạn đã chơi {total.TotalMinutes:0} phút hôm nay.");
+        /// VerifyAccountSdk.Playtime.Start();
+        /// </code>
+        /// </summary>
+        public static class Playtime
+        {
+            /// <summary>
+            /// Tổng thời gian chơi trong ngày vượt <see cref="VerifyAccountSettings.dailyPlayLimitMinutes"/>
+            /// (mặc định 180 phút). Phát **đúng một lần mỗi ngày**; qua ngày mới bộ đếm về 0 và
+            /// cảnh báo được phát lại.
+            /// </summary>
+            public static event Action<TimeSpan> DailyLimitReached;
+
+            /// <summary>Bắt đầu đếm. Lần gọi đầu mới sinh GameObject.</summary>
+            public static void Start() => PlaytimeTracker.StartTracking();
+
+            /// <summary>Tạm dừng đếm và chốt sổ xuống PlayerPrefs.</summary>
+            public static void Stop() => PlaytimeTracker.StopTracking();
+
+            /// <summary>Đang đếm hay không.</summary>
+            public static bool IsRunning => PlaytimeTracker.IsRunning;
+
+            /// <summary>Tổng thời gian đã chơi hôm nay. Đọc được cả khi chưa <see cref="Start"/>.</summary>
+            public static TimeSpan Today => PlaytimeTracker.Today;
+
+            /// <summary>Hôm nay đã phát cảnh báo hay chưa.</summary>
+            public static bool LimitReachedToday => PlaytimeTracker.WarnedToday;
+
+            /// <summary>Số phút còn lại trước khi chạm mốc. 0 nếu đã vượt hoặc mốc bị tắt.</summary>
+            public static TimeSpan RemainingToday
+            {
+                get
+                {
+                    var limit = Settings.dailyPlayLimitMinutes;
+                    if (limit <= 0) return TimeSpan.Zero;
+                    var left = TimeSpan.FromMinutes(limit) - Today;
+                    return left > TimeSpan.Zero ? left : TimeSpan.Zero;
+                }
+            }
+
+            /// <summary>Xoá bộ đếm của hôm nay, kể cả cờ đã cảnh báo — chủ yếu để test.</summary>
+            public static void ResetToday() => PlaytimeTracker.ResetToday();
+
+            internal static void RaiseDailyLimitReached(TimeSpan total)
+            {
+                if (Settings.showBadgeTooltipOnDailyLimit)
+                    SdkRoot.Current?.ShowBadgeTooltip();
+
+                try
+                {
+                    DailyLimitReached?.Invoke(total);
+                }
+                catch (Exception e)
+                {
+                    // Callback là code của game — lỗi bên đó không được làm chết bộ đếm.
+                    Debug.LogException(e);
+                }
+            }
         }
 
         // ---- Nội bộ: gọi hook an toàn ----

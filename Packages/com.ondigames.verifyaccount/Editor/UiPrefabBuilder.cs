@@ -1,4 +1,5 @@
 using System.IO;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,9 @@ namespace OnDi.VerifyAccount.Editor
     ///
     /// ponytail: builder và prefab trùng thông tin. Nếu hai bên lệch nhau thì bỏ builder đi,
     /// đừng cố đồng bộ ngược.
+    ///
+    /// Toàn bộ chữ là TextMeshPro và cố tình **không gán font** — prefab dùng font mặc định
+    /// của TMP, mỗi project cắm font riêng qua <see cref="VerifyAccountSettings.uiFont"/>.
     /// </summary>
     public static class UiPrefabBuilder
     {
@@ -27,28 +31,73 @@ namespace OnDi.VerifyAccount.Editor
         static readonly Color TextPlaceholder = new Color32(0x9A, 0x9A, 0x9A, 0xFF);
         static readonly Color Orange = new Color32(0xF4, 0x67, 0x1F, 0xFF);
         static readonly Color ErrorRed = new Color32(0xD3, 0x2F, 0x2F, 0xFF);
+        static readonly Color ScrollTrack = new Color32(0x00, 0x00, 0x00, 0x14);
+        static readonly Color ScrollHandle = new Color32(0xB5, 0xB5, 0xB5, 0xFF);
 
         const float PanelWidth = 888f;
         const float SidePadding = 68f;
         const float FieldHeight = 66f;
         const float ScrollTopInset = 130f;
         const float ScrollBottomInset = 40f;
+        const float ScrollbarWidth = 16f;
+        const float ScrollbarInset = 10f;   // cách mép phải panel
+        const float ScrollbarVInset = 8f;   // tránh góc bo của khung
 
-        const int FontTitle = 40;
-        const int FontBody = 31;
-        const int FontField = 30;
-        const int FontError = 26;
-        const int FontButton = 34;
+        const float FontTitle = 40f;
+        const float FontBody = 31f;
+        const float FontField = 30f;
+        const float FontError = 26f;
+        const float FontButton = 30f;
+        const float FontSubmit = 35f;
+        const float FontAgree = 29f;
 
         [MenuItem("Tools/OnDi Verify/Rebuild UI Prefabs")]
         public static void RebuildAll()
         {
+            if (!EnsureTmpResources()) return;
+
             ApplySpriteImportSettings();
             BuildPanelPrefab();
             BuildBadgePrefab();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[VerifyAccount] Đã dựng lại prefab vào " + ResourcesDir);
+        }
+
+        /// <summary>
+        /// Không có TMP Essential Resources thì TextMeshPro không có font mặc định và prefab
+        /// dựng ra sẽ trống trơn. Import luôn hộ, đằng nào project cũng cần — nhưng
+        /// <c>ImportPackage</c> chạy bất đồng bộ nên phải đợi nó xong rồi mới dựng lại.
+        /// </summary>
+        static bool EnsureTmpResources()
+        {
+            if (Resources.Load<TMP_Settings>("TMP Settings") != null) return true;
+
+            Debug.Log("[VerifyAccount] Chưa có TMP Essential Resources — import xong sẽ tự dựng " +
+                      "lại prefab.");
+            AssetDatabase.importPackageCompleted += OnTmpImportCompleted;
+            AssetDatabase.importPackageFailed += OnTmpImportFailed;
+            TMP_PackageResourceImporter.ImportResources(true, false, false);
+            return false;
+        }
+
+        static void OnTmpImportCompleted(string packageName)
+        {
+            UnsubscribeTmpImport();
+            EditorApplication.delayCall += RebuildAll;
+        }
+
+        static void OnTmpImportFailed(string packageName, string error)
+        {
+            UnsubscribeTmpImport();
+            Debug.LogError("[VerifyAccount] Import TMP Essential Resources thất bại (" + error +
+                           "). Vào Window > TextMeshPro > Import TMP Essential Resources rồi chạy lại.");
+        }
+
+        static void UnsubscribeTmpImport()
+        {
+            AssetDatabase.importPackageCompleted -= OnTmpImportCompleted;
+            AssetDatabase.importPackageFailed -= OnTmpImportFailed;
         }
 
         // ---- Import settings cho sprite ----
@@ -92,12 +141,6 @@ namespace OnDi.VerifyAccount.Editor
         static Sprite Sprite(string fileName) =>
             AssetDatabase.LoadAssetAtPath<Sprite>(SpritesDir + "/" + fileName);
 
-        static Font UiFont()
-        {
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            return font != null ? font : Resources.GetBuiltinResource<Font>("Arial.ttf");
-        }
-
         // ---- Panel ----
 
         static void BuildPanelPrefab()
@@ -132,7 +175,11 @@ namespace OnDi.VerifyAccount.Editor
 
             var viewport = NewUi("Viewport", scroll);
             Stretch(viewport);
+            // Thanh cuộn ăn bớt bề ngang viewport từ mép phải, nên pivot phải nằm ở mép trái.
+            viewport.pivot = new Vector2(0f, 1f);
             viewport.gameObject.AddComponent<RectMask2D>();
+            // Ảnh trong suốt để kéo vào chỗ trống trong form cũng cuộn được.
+            AddDragCatcher(viewport);
             scrollRect.viewport = viewport;
 
             var content = NewUi("Content", viewport);
@@ -141,6 +188,7 @@ namespace OnDi.VerifyAccount.Editor
             content.pivot = new Vector2(0.5f, 1f);
             content.offsetMin = new Vector2(0f, 0f);
             content.offsetMax = new Vector2(0f, 0f);
+            AddDragCatcher(content);
             scrollRect.content = content;
 
             var vlg = content.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -153,20 +201,22 @@ namespace OnDi.VerifyAccount.Editor
             var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            BuildVerticalScrollbar(scroll, scrollRect);
+
             var autoHeight = panel.gameObject.AddComponent<PanelAutoHeight>();
 
             // --- nội dung form, đúng thứ tự trong demo ---
             NewLabel("Title", content, "Xác thực thông tin", TextDark, FontTitle,
-                     TextAnchor.MiddleCenter, bold: true, height: 62f);
+                     TextAlignmentOptions.Center, bold: true, height: 62f);
             NewLabel("Subtitle", content, "Vui lòng xác thực để tiếp tục dịch vụ.", TextBody, FontBody,
-                     TextAnchor.MiddleLeft, bold: false, height: 50f);
+                     TextAlignmentOptions.Left, bold: true, height: 50f);
 
             var nameInput = NewField("NameField", content, "Nhập họ và tên",
-                                     InputField.ContentType.Standard, TouchScreenKeyboardType.Default, 50);
+                                     TMP_InputField.ContentType.Standard, TouchScreenKeyboardType.Default, 50);
             var nameError = NewError("NameError", content);
 
             var phoneInput = NewField("PhoneField", content, "Nhập số điện thoại",
-                                      InputField.ContentType.Custom, TouchScreenKeyboardType.PhonePad, 15);
+                                      TMP_InputField.ContentType.Custom, TouchScreenKeyboardType.PhonePad, 15);
             var phoneError = NewError("PhoneError", content);
 
             var sendOtp = NewButton("BtnSendOtp", NewRow("RowSendOtp", content, 86f),
@@ -174,18 +224,18 @@ namespace OnDi.VerifyAccount.Editor
             SetLayoutSize(sendOtp.transform, 215f, 80f);
 
             var otpInput = NewField("OtpField", content, "Nhập mã OTP",
-                                    InputField.ContentType.IntegerNumber, TouchScreenKeyboardType.NumberPad, 6);
+                                    TMP_InputField.ContentType.IntegerNumber, TouchScreenKeyboardType.NumberPad, 6);
 
             var resend = NewButton("BtnResend", NewRow("RowResend", content, 68f),
-                                   "btn_cam.png", "Gửi lại", Color.white, 30);
+                                   "btn_cam.png", "Gửi lại", Color.white, FontButton);
             SetLayoutSize(resend.transform, 168f, 62f);
 
             var countdown = NewLabel("Countdown", content, "OTP hết hạn sau 3:00", TextBody, FontBody,
-                                     TextAnchor.MiddleLeft, bold: false, height: 48f);
+                                     TextAlignmentOptions.Left, bold: true, height: 48f);
             var otpError = NewError("OtpError", content);
 
             var dobInput = NewField("DobField", content, "dd/mm/yyyy",
-                                    InputField.ContentType.Custom, TouchScreenKeyboardType.NumberPad, 10);
+                                    TMP_InputField.ContentType.Custom, TouchScreenKeyboardType.NumberPad, 10);
             var dobError = NewError("DobError", content);
 
             // hàng tiêu đề nhóm điều khoản + mũi tên gập
@@ -195,9 +245,9 @@ namespace OnDi.VerifyAccount.Editor
             agreeHlg.spacing = 12f;
             var agreeLabel = NewLabel("Label", agreeHeader,
                                       "Tôi đồng ý và chấp thuận với các chính sách và điều khoản sau đây",
-                                      TextBody, FontBody, TextAnchor.MiddleLeft, bold: false, height: 0f);
+                                      TextBody, FontBody, TextAlignmentOptions.Left, bold: true, height: 0f);
             SetFlexibleWidth(agreeLabel.transform, 1f);
-            var arrow = NewLabel("Arrow", agreeHeader, "^", TextBody, 40, TextAnchor.MiddleCenter,
+            var arrow = NewLabel("Arrow", agreeHeader, "^", TextBody, 40f, TextAlignmentOptions.Center,
                                  bold: true, height: 0f);
             SetLayoutSize(arrow.transform, 48f, 48f);
             var agreeHeaderButton = agreeHeader.gameObject.AddComponent<Button>();
@@ -223,10 +273,10 @@ namespace OnDi.VerifyAccount.Editor
 
             var formError = NewError("FormError", content);
 
-            var submit = NewButton("BtnSubmit", content, "btn_xam.png", "Hoàn thành", Color.white, 38);
+            var submit = NewButton("BtnSubmit", content, "btn_xam.png", "Hoàn thành", Color.white, FontSubmit);
             SetLayoutSize(submit.transform, 0f, 88f, preferHeightOnly: true);
 
-            WirePanel(root, autoHeight, content,
+            WirePanel(root, autoHeight, content, scrollRect,
                       nameInput, phoneInput, otpInput, dobInput,
                       skip, sendOtp, resend, submit,
                       termsToggle, privacyToggle, termsLink, privacyLink,
@@ -236,13 +286,70 @@ namespace OnDi.VerifyAccount.Editor
             SavePrefab(root.gameObject, ResourcesDir + "/VerifyPanel.prefab");
         }
 
+        /// <summary>
+        /// Thanh cuộn dọc bám mép phải vùng cuộn. <c>AutoHideAndExpandViewport</c> nên nội dung
+        /// vừa khung thì thanh biến mất hẳn và form rộng lại như cũ; chỉ khi UI bị co — màn ngang,
+        /// máy màn ngắn, chữ xuống dòng nhiều — thanh mới hiện ra.
+        /// </summary>
+        static void BuildVerticalScrollbar(RectTransform scroll, ScrollRect scrollRect)
+        {
+            var bar = NewUi("ScrollbarV", scroll);
+            bar.anchorMin = new Vector2(1f, 0f);
+            bar.anchorMax = new Vector2(1f, 1f);
+            bar.pivot = new Vector2(1f, 1f);
+            bar.offsetMin = new Vector2(-(ScrollbarWidth + ScrollbarInset), ScrollbarVInset);
+            bar.offsetMax = new Vector2(-ScrollbarInset, -ScrollbarVInset);
+
+            var track = bar.gameObject.AddComponent<Image>();
+            track.sprite = Sprite("round_white.png");
+            track.type = Image.Type.Sliced;
+            // Bo góc của round_white là 16px, rộng hơn cả thanh — thu nhỏ border lại cho vừa.
+            track.pixelsPerUnitMultiplier = 4f;
+            track.color = ScrollTrack;
+
+            var slidingArea = NewUi("Sliding Area", bar);
+            Stretch(slidingArea);
+
+            var handle = NewUi("Handle", slidingArea);
+            Stretch(handle);
+            var handleImage = handle.gameObject.AddComponent<Image>();
+            handleImage.sprite = Sprite("round_white.png");
+            handleImage.type = Image.Type.Sliced;
+            handleImage.pixelsPerUnitMultiplier = 4f;
+            handleImage.color = ScrollHandle;
+
+            var scrollbar = bar.gameObject.AddComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.transition = Selectable.Transition.None;
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.handleRect = handle;
+            scrollbar.value = 1f;
+            scrollbar.size = 1f;
+
+            scrollRect.verticalScrollbar = scrollbar;
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
+            // Viewport hẹp lại đúng bằng bề ngang thanh cộng khoảng cách tới mép, nên mép
+            // phải của nội dung dừng ngay sát mép trái thanh cuộn, không chồng lên nhau.
+            scrollRect.verticalScrollbarSpacing = ScrollbarInset;
+        }
+
+        /// <summary>Graphic trong suốt: ScrollRect cần một thứ nhận raycast thì mới kéo được.</summary>
+        static void AddDragCatcher(RectTransform target)
+        {
+            var image = target.gameObject.AddComponent<Image>();
+            image.color = new Color(1f, 1f, 1f, 0f);
+            image.raycastTarget = true;
+        }
+
         static void WirePanel(RectTransform root, PanelAutoHeight autoHeight, RectTransform content,
-                              InputField nameInput, InputField phoneInput, InputField otpInput, InputField dobInput,
+                              ScrollRect scrollRect,
+                              TMP_InputField nameInput, TMP_InputField phoneInput,
+                              TMP_InputField otpInput, TMP_InputField dobInput,
                               Button skip, Button sendOtp, Button resend, Button submit,
                               Toggle termsToggle, Toggle privacyToggle, Button termsLink, Button privacyLink,
-                              Button agreeHeaderButton, RectTransform agreeGroup, Text arrow,
-                              Text countdown, Text nameError, Text phoneError, Text otpError,
-                              Text dobError, Text formError)
+                              Button agreeHeaderButton, RectTransform agreeGroup, TMP_Text arrow,
+                              TMP_Text countdown, TMP_Text nameError, TMP_Text phoneError, TMP_Text otpError,
+                              TMP_Text dobError, TMP_Text formError)
         {
             var panel = root.GetComponent<VerifyPanel>() != null
                 ? root.GetComponent<VerifyPanel>()
@@ -267,6 +374,7 @@ namespace OnDi.VerifyAccount.Editor
             so.FindProperty("agreeHeaderButton").objectReferenceValue = agreeHeaderButton;
             so.FindProperty("agreeGroup").objectReferenceValue = agreeGroup.gameObject;
             so.FindProperty("agreeArrow").objectReferenceValue = arrow.rectTransform;
+            so.FindProperty("scroll").objectReferenceValue = scrollRect;
             so.FindProperty("countdownText").objectReferenceValue = countdown;
             so.FindProperty("nameError").objectReferenceValue = nameError;
             so.FindProperty("phoneError").objectReferenceValue = phoneError;
@@ -311,8 +419,8 @@ namespace OnDi.VerifyAccount.Editor
             toggle.graphic = checkImage;
             toggle.isOn = false;
 
-            var label = NewLabel("Label", row, richText, TextBody, 29, TextAnchor.UpperLeft,
-                                 bold: false, height: 0f);
+            var label = NewLabel("Label", row, richText, TextBody, FontAgree, TextAlignmentOptions.TopLeft,
+                                 bold: true, height: 0f);
             SetFlexibleWidth(label.transform, 1f);
             linkButton = label.gameObject.AddComponent<Button>();
             linkButton.targetGraphic = label;
@@ -331,8 +439,11 @@ namespace OnDi.VerifyAccount.Editor
             icon.sprite = Sprite("badge18.png");
             icon.raycastTarget = true;
 
-            var label = NewLabel("Label", root, "18+", new Color32(0x22, 0x33, 0x55, 0xFF), 44,
-                                 TextAnchor.MiddleCenter, bold: true, height: 0f);
+            // Mờ/rõ chạy qua CanvasGroup để một lần đổi là cả badge lẫn bong bóng cùng theo.
+            var canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
+
+            var label = NewLabel("Label", root, "18+", new Color32(0x22, 0x33, 0x55, 0xFF), 44f,
+                                 TextAlignmentOptions.Center, bold: true, height: 0f);
             Stretch(label.rectTransform);
             label.raycastTarget = false;
 
@@ -355,7 +466,7 @@ namespace OnDi.VerifyAccount.Editor
 
             var text = NewLabel("Text", tooltip,
                                 "Chơi quá 180 phút một ngày sẽ ảnh hưởng xấu đến sức khỏe",
-                                TextDark, 30, TextAnchor.MiddleCenter, bold: true, height: 0f);
+                                TextDark, 30f, TextAlignmentOptions.Center, bold: true, height: 0f);
             text.raycastTarget = false;
 
             var tail = NewUi("Tail", tooltip);
@@ -371,6 +482,7 @@ namespace OnDi.VerifyAccount.Editor
             so.FindProperty("tooltip").objectReferenceValue = tooltip;
             so.FindProperty("tooltipText").objectReferenceValue = text;
             so.FindProperty("tooltipTail").objectReferenceValue = tail;
+            so.FindProperty("canvasGroup").objectReferenceValue = canvasGroup;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             tooltip.gameObject.SetActive(false);
@@ -398,28 +510,28 @@ namespace OnDi.VerifyAccount.Editor
             rect.offsetMax = new Vector2(-right, -top);
         }
 
-        static Text NewLabel(string name, RectTransform parent, string content, Color color, int size,
-                             TextAnchor anchor, bool bold, float height)
+        static TextMeshProUGUI NewLabel(string name, RectTransform parent, string content, Color color,
+                                        float size, TextAlignmentOptions alignment, bool bold, float height)
         {
             var rect = NewUi(name, parent);
-            var text = rect.gameObject.AddComponent<Text>();
-            text.font = UiFont();
+            var text = rect.gameObject.AddComponent<TextMeshProUGUI>();
             text.text = content;
             text.color = color;
             text.fontSize = size;
-            text.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
-            text.alignment = anchor;
-            text.supportRichText = true;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
-            text.lineSpacing = 1.1f;
+            text.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
+            text.alignment = alignment;
+            text.richText = true;
+            text.enableWordWrapping = true;
+            text.overflowMode = TextOverflowModes.Overflow;
+            text.lineSpacing = 8f;
+            text.margin = Vector4.zero;
             if (height > 0f) SetLayoutSize(rect, 0f, height, preferHeightOnly: true);
             return text;
         }
 
-        static Text NewError(string name, RectTransform parent)
+        static TextMeshProUGUI NewError(string name, RectTransform parent)
         {
-            var text = NewLabel(name, parent, "", ErrorRed, FontError, TextAnchor.MiddleLeft,
+            var text = NewLabel(name, parent, "", ErrorRed, FontError, TextAlignmentOptions.Left,
                                 bold: false, height: 0f);
             text.gameObject.SetActive(false);
             return text;
@@ -439,7 +551,7 @@ namespace OnDi.VerifyAccount.Editor
         }
 
         static Button NewButton(string name, RectTransform parent, string sprite, string caption,
-                                Color captionColor, int fontSize)
+                                Color captionColor, float fontSize)
         {
             var rect = NewUi(name, parent);
             var image = rect.gameObject.AddComponent<Image>();
@@ -450,15 +562,15 @@ namespace OnDi.VerifyAccount.Editor
             button.targetGraphic = image;
 
             var label = NewLabel("Label", rect, caption, captionColor, fontSize,
-                                 TextAnchor.MiddleCenter, bold: true, height: 0f);
+                                 TextAlignmentOptions.Center, bold: true, height: 0f);
             Stretch(label.rectTransform, 10f, 4f, 10f, 4f);
             label.raycastTarget = false;
             return button;
         }
 
-        static InputField NewField(string name, RectTransform parent, string placeholder,
-                                   InputField.ContentType contentType,
-                                   TouchScreenKeyboardType keyboard, int characterLimit)
+        static TMP_InputField NewField(string name, RectTransform parent, string placeholder,
+                                       TMP_InputField.ContentType contentType,
+                                       TouchScreenKeyboardType keyboard, int characterLimit)
         {
             var rect = NewUi(name, parent);
             var bg = rect.gameObject.AddComponent<Image>();
@@ -467,37 +579,39 @@ namespace OnDi.VerifyAccount.Editor
             bg.color = FieldBg;
             SetLayoutSize(rect, 0f, FieldHeight, preferHeightOnly: true);
 
-            var textRect = NewUi("Text", rect);
-            Stretch(textRect, 26f, 6f, 26f, 6f);
-            var text = textRect.gameObject.AddComponent<Text>();
-            text.font = UiFont();
-            text.fontSize = FontField;
-            text.color = TextDark;
-            text.alignment = TextAnchor.MiddleLeft;
-            text.supportRichText = false;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
+            // TMP_InputField cắt chữ tràn bằng RectMask2D trên "Text Area" chứ không bằng offset
+            // như InputField cũ, nên phải có đúng node này ở giữa.
+            var area = NewUi("Text Area", rect);
+            Stretch(area, 26f, 6f, 26f, 6f);
+            area.gameObject.AddComponent<RectMask2D>();
 
-            var placeholderRect = NewUi("Placeholder", rect);
-            Stretch(placeholderRect, 26f, 6f, 26f, 6f);
-            var placeholderText = placeholderRect.gameObject.AddComponent<Text>();
-            placeholderText.font = UiFont();
-            placeholderText.fontSize = FontField;
-            placeholderText.color = TextPlaceholder;
-            placeholderText.alignment = TextAnchor.MiddleLeft;
-            placeholderText.text = placeholder;
-            placeholderText.supportRichText = false;
-            placeholderText.horizontalOverflow = HorizontalWrapMode.Overflow;
-            placeholderText.verticalOverflow = VerticalWrapMode.Truncate;
+            var placeholderText = NewLabel("Placeholder", area, placeholder, TextPlaceholder, FontField,
+                                           TextAlignmentOptions.Left, bold: false, height: 0f);
+            Stretch(placeholderText.rectTransform);
+            placeholderText.enableWordWrapping = false;
+            placeholderText.raycastTarget = false;
 
-            var input = rect.gameObject.AddComponent<InputField>();
+            var text = NewLabel("Text", area, "", TextDark, FontField, TextAlignmentOptions.Left,
+                                bold: true, height: 0f);
+            Stretch(text.rectTransform);
+            text.enableWordWrapping = false;
+            text.richText = false;
+            text.raycastTarget = false;
+
+            var input = rect.gameObject.AddComponent<TMP_InputField>();
             input.targetGraphic = bg;
+            input.textViewport = area;
             input.textComponent = text;
             input.placeholder = placeholderText;
-            input.lineType = InputField.LineType.SingleLine;
             input.contentType = contentType;
+            input.lineType = TMP_InputField.LineType.SingleLine;
             input.keyboardType = keyboard;
             input.characterLimit = characterLimit;
+            input.customCaretColor = true;
+            input.caretColor = TextDark;
+            input.caretWidth = 2;
+            input.selectionColor = new Color32(0xF4, 0x67, 0x1F, 0x55);
+            input.restoreOriginalTextOnEscape = false;
             return input;
         }
 

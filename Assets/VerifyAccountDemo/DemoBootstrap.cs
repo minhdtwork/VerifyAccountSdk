@@ -27,6 +27,11 @@ public sealed class DemoBootstrap : MonoBehaviour
                    profile.BirthDate.ToString("dd/MM/yyyy"));
         VerifyAccountSdk.Skipped += () => SetLog("Người chơi bấm Bỏ qua.");
         VerifyAccountSdk.Closed += () => SetLog("Panel đã đóng.");
+
+        // Cảnh báo chơi quá lâu: phát đúng một lần mỗi ngày.
+        VerifyAccountSdk.Playtime.DailyLimitReached += total =>
+            SetLog("Đã chơi " + (int)total.TotalMinutes + " phút hôm nay — cảnh báo sức khỏe.");
+        VerifyAccountSdk.Playtime.Start();
     }
 
     static async Task<SdkResult> FakeSendOtp(SendOtpRequest request)
@@ -94,6 +99,14 @@ public sealed class DemoBootstrap : MonoBehaviour
 
         if (GUILayout.Button("Xoá cờ đã xác thực", GUILayout.Height(44)))
             VerifyAccountSdk.ClearVerified();
+
+        GUILayout.Space(12);
+        var today = VerifyAccountSdk.Playtime.Today;
+        GUILayout.Label("Đã chơi hôm nay: " + today.ToString(@"hh\:mm\:ss") +
+                        (VerifyAccountSdk.Playtime.LimitReachedToday ? " (đã cảnh báo)" : ""));
+
+        if (GUILayout.Button("Xoá bộ đếm thời gian chơi", GUILayout.Height(44)))
+            VerifyAccountSdk.Playtime.ResetToday();
 
         GUILayout.Space(12);
         GUILayout.Label(_log);

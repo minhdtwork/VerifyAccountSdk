@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -157,6 +158,38 @@ namespace OnDi.VerifyAccount
             if (_badge != null) _badge.ResetPosition();
         }
 
+        internal void ShowBadgeTooltip()
+        {
+            if (_badge != null && _badge.gameObject.activeInHierarchy) _badge.ShowTooltip();
+        }
+
+        // ---- Font ----
+
+        /// <summary>Đẩy font trong Settings xuống mọi chữ đang sống của SDK.</summary>
+        internal void ApplyUiFont()
+        {
+            if (_panel != null) ApplyUiFont(_panel.gameObject);
+            if (_badge != null) ApplyUiFont(_badge.gameObject);
+        }
+
+        /// <summary>
+        /// Prefab đi kèm SDK dùng font mặc định của TextMeshPro; mỗi project cắm font riêng
+        /// bằng <see cref="VerifyAccountSettings.uiFont"/> và nó được dán vào đây.
+        /// </summary>
+        static void ApplyUiFont(GameObject target)
+        {
+            var font = VerifyAccountSdk.UiFont;
+            if (font == null) return;
+
+            var material = VerifyAccountSdk.UiFontMaterial;
+            var texts = target.GetComponentsInChildren<TMP_Text>(true);
+            foreach (var text in texts)
+            {
+                text.font = font;
+                if (material != null) text.fontSharedMaterial = material;
+            }
+        }
+
         T Spawn<T>(string resourcePath) where T : Component
         {
             var prefab = Resources.Load<GameObject>(resourcePath);
@@ -169,6 +202,7 @@ namespace OnDi.VerifyAccount
 
             var instance = Instantiate(prefab, transform, false);
             instance.name = prefab.name;
+            ApplyUiFont(instance);
 
             var component = instance.GetComponent<T>();
             if (component == null)

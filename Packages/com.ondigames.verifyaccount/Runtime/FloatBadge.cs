@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -7,10 +8,13 @@ namespace OnDi.VerifyAccount
     /// <summary>
     /// Badge 18+ nổi: neo vào viền trái hoặc phải, kéo thả được, chạm vào thì hiện bong bóng
     /// cảnh báo. Vị trí lưu dưới dạng tỉ lệ nên xoay màn hay đổi thiết bị vẫn về đúng chỗ.
+    ///
+    /// <para>Lúc nằm yên badge mờ đi cho đỡ che game; đang hiện bong bóng hoặc đang bị kéo
+    /// thì rõ hoàn toàn.</para>
     /// </summary>
     [DisallowMultipleComponent]
     internal sealed class FloatBadge : MonoBehaviour,
-        IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+        IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerClickHandler
     {
         const string PrefOnRight = "OnDi.VerifyAccount.Badge.OnRight";
         const string PrefYRatio = "OnDi.VerifyAccount.Badge.YRatio";
@@ -18,8 +22,9 @@ namespace OnDi.VerifyAccount
 
         [SerializeField] Image icon;
         [SerializeField] RectTransform tooltip;
-        [SerializeField] Text tooltipText;
+        [SerializeField] TMP_Text tooltipText;
         [SerializeField] RectTransform tooltipTail;
+        [SerializeField] CanvasGroup canvasGroup;
         [SerializeField] float edgeMargin = 12f;
 
         RectTransform _rect;
@@ -28,10 +33,13 @@ namespace OnDi.VerifyAccount
         bool _onRight = true;
         float _yRatio = DefaultYRatio;
         float _hideTooltipAt;
+        bool _dragging;
+        bool _draggedThisPress;
 
         void Awake()
         {
             _rect = (RectTransform)transform;
+            if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
 
             var settings = VerifyAccountSdk.Settings;
             if (settings.badgeSprite != null && icon != null) icon.sprite = settings.badgeSprite;
@@ -41,6 +49,7 @@ namespace OnDi.VerifyAccount
             _yRatio = PlayerPrefs.GetFloat(PrefYRatio, DefaultYRatio);
 
             if (tooltip != null) tooltip.gameObject.SetActive(false);
+            SnapAlpha();
         }
 
         void OnEnable()
@@ -49,17 +58,22 @@ namespace OnDi.VerifyAccount
             var root = SdkRoot.Current;
             if (root != null) root.ScreenChanged += ApplySavedPosition;
             ApplySavedPosition();
+            SnapAlpha();
         }
 
         void OnDisable()
         {
             var root = SdkRoot.Current;
             if (root != null) root.ScreenChanged -= ApplySavedPosition;
+            _dragging = false;
+            _draggedThisPress = false;
             HideTooltip();
         }
 
         void Update()
         {
+            FadeAlpha();
+
             if (tooltip == null || !tooltip.gameObject.activeSelf) return;
 
             if (_hideTooltipAt > 0f && Time.unscaledTime >= _hideTooltipAt)
@@ -89,6 +103,8 @@ namespace OnDi.VerifyAccount
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            _dragging = true;
+            _draggedThisPress = true;
             HideTooltip();
             if (TryGetLocalPoint(eventData, out var local))
                 _dragOffset = _rect.anchoredPosition - local;
@@ -107,6 +123,7 @@ namespace OnDi.VerifyAccount
 
         public void OnEndDrag(PointerEventData eventData)
         {
+            _dragging = false;
             GetBounds(out var minX, out var maxX, out var minY, out var maxY);
 
             var pos = _rect.anchoredPosition;
@@ -120,9 +137,18 @@ namespace OnDi.VerifyAccount
             ApplySavedPosition();
         }
 
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _draggedThisPress = false;
+        }
+
         public void OnPointerClick(PointerEventData eventData)
         {
-            // EventSystem chỉ bắn sự kiện này khi là chạm thật, kéo quá ngưỡng thì không.
+            // EventSystem vẫn bắn pointerClick ở cuối một lần kéo: nó chỉ xoá eligibleForClick
+            // khi chỗ nhận press khác chỗ nhận drag, mà badge thì nhận cả hai. Sự kiện này lại
+            // đến trước OnEndDrag nên không tin được _dragging — phải nhớ theo từng lần nhấn.
+            if (_draggedThisPress) return;
+
             if (tooltip == null) return;
             if (tooltip.gameObject.activeSelf) HideTooltip();
             else ShowTooltip();
@@ -182,8 +208,11 @@ namespace OnDi.VerifyAccount
 
         // ---- Bong bóng ----
 
-        void ShowTooltip()
+        /// <summary>Bật bong bóng từ ngoài — bộ đếm thời gian chơi dùng lối này.</summary>
+        internal void ShowTooltip()
         {
+            if (tooltip == null) return;
+
             tooltip.gameObject.SetActive(true);
             LayoutTooltip();
 
@@ -195,6 +224,40 @@ namespace OnDi.VerifyAccount
         {
             if (tooltip != null) tooltip.gameObject.SetActive(false);
             _hideTooltipAt = 0f;
+        }
+
+        // ---- Độ mờ ----
+
+        /// <summary>Rõ hoàn toàn khi đang hiện bong bóng hoặc đang bị kéo, còn lại thì mờ.</summary>
+        float TargetAlpha
+        {
+            get
+            {
+                if (_dragging) return 1f;
+                if (tooltip != null && tooltip.gameObject.activeSelf) return 1f;
+                return Mathf.Clamp01(VerifyAccountSdk.Settings.badgeIdleAlpha);
+            }
+        }
+
+        void SnapAlpha()
+        {
+            if (canvasGroup != null) canvasGroup.alpha = TargetAlpha;
+        }
+
+        void FadeAlpha()
+        {
+            if (canvasGroup == null) return;
+
+            var target = TargetAlpha;
+            var seconds = VerifyAccountSdk.Settings.badgeFadeSeconds;
+            if (seconds <= 0f)
+            {
+                canvasGroup.alpha = target;
+                return;
+            }
+
+            canvasGroup.alpha = Mathf.MoveTowards(
+                canvasGroup.alpha, target, Time.unscaledDeltaTime / seconds);
         }
 
         /// <summary>Đặt bong bóng sang phía đối diện viền mà badge đang bám, rồi kẹp vào màn hình.</summary>

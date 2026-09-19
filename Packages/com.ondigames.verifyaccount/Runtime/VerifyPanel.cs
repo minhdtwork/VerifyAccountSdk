@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,13 +9,13 @@ namespace OnDi.VerifyAccount
     [DisallowMultipleComponent]
     internal sealed class VerifyPanel : MonoBehaviour
     {
-        [Header("Ô nhập")]
-        [SerializeField] InputField nameInput;
-        [SerializeField] InputField phoneInput;
-        [SerializeField] InputField otpInput;
-        [SerializeField] InputField dobInput;
+        [Header("Input Fields")]
+        [SerializeField] TMP_InputField nameInput;
+        [SerializeField] TMP_InputField phoneInput;
+        [SerializeField] TMP_InputField otpInput;
+        [SerializeField] TMP_InputField dobInput;
 
-        [Header("Nút")]
+        [Header("Buttons")]
         [SerializeField] Button skipButton;
         [SerializeField] Button sendOtpButton;
         [SerializeField] Button resendButton;
@@ -23,7 +24,7 @@ namespace OnDi.VerifyAccount
         [SerializeField] Sprite submitEnabledSprite;
         [SerializeField] Sprite submitDisabledSprite;
 
-        [Header("Điều khoản")]
+        [Header("Terms")]
         [SerializeField] Toggle termsToggle;
         [SerializeField] Toggle privacyToggle;
         [SerializeField] Button termsLinkButton;
@@ -32,16 +33,20 @@ namespace OnDi.VerifyAccount
         [SerializeField] GameObject agreeGroup;
         [SerializeField] RectTransform agreeArrow;
 
-        [Header("Thông báo")]
-        [SerializeField] Text countdownText;
-        [SerializeField] Text nameError;
-        [SerializeField] Text phoneError;
-        [SerializeField] Text otpError;
-        [SerializeField] Text dobError;
-        [SerializeField] Text formError;
+        [Header("Scrolling")]
+        [SerializeField] ScrollRect scroll;
+
+        [Header("Messages")]
+        [SerializeField] TMP_Text countdownText;
+        [SerializeField] TMP_Text nameError;
+        [SerializeField] TMP_Text phoneError;
+        [SerializeField] TMP_Text otpError;
+        [SerializeField] TMP_Text dobError;
+        [SerializeField] TMP_Text formError;
 
         VerifyAccountSettings _settings;
         bool _busy;
+        int _scrollToTopIn;
         bool _otpSent;
         bool _maskingDate;
         float _otpExpiresAt;
@@ -95,6 +100,22 @@ namespace OnDi.VerifyAccount
             SetAgreeGroupOpen(true);
             ApplySkipButtonVisibility();
             Refresh();
+
+            _scrollToTopIn = 2;
+        }
+
+        /// <summary>
+        /// Mỗi lần mở lại phải về đầu form, nhưng chỉ sau khi PanelAutoHeight và layout group
+        /// đã chốt kích thước. Thứ tự LateUpdate giữa các component không đảm bảo nên đợi hẳn
+        /// vài frame thay vì đặt ngay trong <see cref="Open"/>.
+        /// </summary>
+        void LateUpdate()
+        {
+            if (_scrollToTopIn <= 0) return;
+            if (--_scrollToTopIn > 0 || scroll == null) return;
+
+            scroll.StopMovement();
+            scroll.verticalNormalizedPosition = 1f;
         }
 
         internal void ApplySkipButtonVisibility()
@@ -298,14 +319,14 @@ namespace OnDi.VerifyAccount
 
         // ---- Dòng lỗi ----
 
-        static void Show(Text target, string message)
+        static void Show(TMP_Text target, string message)
         {
             if (target == null) return;
             target.text = message;
             target.gameObject.SetActive(!string.IsNullOrEmpty(message));
         }
 
-        static void Clear(Text target) => Show(target, null);
+        static void Clear(TMP_Text target) => Show(target, null);
 
         static string Fallback(string message, string standIn) =>
             string.IsNullOrWhiteSpace(message) ? standIn : message;

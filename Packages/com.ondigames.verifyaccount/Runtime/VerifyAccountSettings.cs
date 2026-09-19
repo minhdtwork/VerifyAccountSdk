@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace OnDi.VerifyAccount
@@ -12,12 +13,22 @@ namespace OnDi.VerifyAccount
     {
         public const string ResourceName = "VerifyAccountSettings";
 
-        [Header("Link chính sách")]
+        [Header("Policy Links")]
         [Tooltip("Mở khi người chơi bấm vào dòng \"Điều khoản sử dụng\".")]
         public string termsUrl = "";
 
         [Tooltip("Mở khi người chơi bấm vào dòng \"Chính sách bảo vệ và xử lý dữ liệu cá nhân\".")]
         public string privacyUrl = "";
+
+        [Header("Font")]
+        [Tooltip("Font TextMeshPro dùng cho toàn bộ chữ của SDK — đây là chỗ mỗi project cắm " +
+                 "font riêng của mình vào. Để trống thì dùng font mặc định của TextMeshPro " +
+                 "(LiberationSans SDF, có đủ dấu tiếng Việt).")]
+        public TMP_FontAsset uiFont;
+
+        [Tooltip("Material preset đi kèm font (viền, đổ bóng...). Để trống thì dùng material " +
+                 "gốc của font.")]
+        public Material uiFontMaterial;
 
         [Header("Canvas")]
         [Tooltip("Sorting layer của canvas SDK. Để trống hoặc tên không tồn tại thì dùng Default.")]
@@ -26,7 +37,7 @@ namespace OnDi.VerifyAccount
         [Tooltip("Sorting order. Để cao để luôn nằm trên UI của game.")]
         public int sortingOrder = 32000;
 
-        [Header("Kiểm tra dữ liệu")]
+        [Header("Validation")]
         [Tooltip("Biểu thức chính quy cho số điện thoại. Để trống là chấp nhận mọi chuỗi khác rỗng.")]
         public string phoneRegex = @"^(0|\+84)(3|5|7|8|9)\d{8}$";
 
@@ -35,7 +46,7 @@ namespace OnDi.VerifyAccount
         [Tooltip("Tuổi tối thiểu tính theo ngày sinh. 0 là không kiểm tra.")]
         [Min(0)] public int minAge = 0;
 
-        [Header("Thời gian OTP")]
+        [Header("OTP Timing")]
         [Tooltip("Đồng hồ đếm ngược \"OTP hết hạn sau\", tính bằng giây.")]
         [Min(1)] public int otpTtlSeconds = 180;
 
@@ -46,7 +57,7 @@ namespace OnDi.VerifyAccount
         [Tooltip("Hiện nút \"Bỏ qua\". Đổi lúc chạy bằng VerifyAccountSdk.SetSkipButtonVisible().")]
         public bool showSkipButton = true;
 
-        [Header("Badge nổi")]
+        [Header("Floating Badge")]
         [Tooltip("Để trống thì dùng icon mặc định trong prefab.")]
         public Sprite badgeSprite;
 
@@ -55,5 +66,20 @@ namespace OnDi.VerifyAccount
 
         [Tooltip("Tự tắt bong bóng sau bao nhiêu giây. 0 là không tự tắt.")]
         [Min(0f)] public float tooltipAutoHideSeconds = 4f;
+
+        [Tooltip("Độ mờ của badge khi đang không hiện bong bóng. 1 là rõ hoàn toàn.")]
+        [Range(0.1f, 1f)] public float badgeIdleAlpha = 0.55f;
+
+        [Tooltip("Thời gian chuyển giữa mờ và rõ, tính bằng giây. 0 là đổi tức thì.")]
+        [Min(0f)] public float badgeFadeSeconds = 0.15f;
+
+        [Header("Playtime Tracker")]
+        [Tooltip("Tổng số phút chơi trong một ngày trước khi phát cảnh báo " +
+                 "VerifyAccountSdk.Playtime.DailyLimitReached. 0 là tắt cảnh báo.")]
+        [Min(0)] public int dailyPlayLimitMinutes = 180;
+
+        [Tooltip("Chạm mốc thì tự bật luôn bong bóng cảnh báo của badge, nếu badge đang hiện. " +
+                 "Tắt đi nếu game muốn tự dựng popup cảnh báo trong callback.")]
+        public bool showBadgeTooltipOnDailyLimit = true;
     }
 }

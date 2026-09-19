@@ -2,7 +2,8 @@
     "name": "OnDi.VerifyAccount.Editor",
     "rootNamespace": "OnDi.VerifyAccount.Editor",
     "references": [
-        "OnDi.VerifyAccount"
+        "OnDi.VerifyAccount",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

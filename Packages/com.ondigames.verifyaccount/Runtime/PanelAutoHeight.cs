@@ -22,6 +22,13 @@ namespace OnDi.VerifyAccount
         [Range(0.3f, 1f)]
         [SerializeField] float maxScreenRatio = 0.92f;
 
+        /// <summary>
+        /// Panel ôm sát nội dung nên vùng cuộn cao đúng bằng nội dung — rơi trúng ngưỡng
+        /// bật/tắt thanh cuộn của ScrollRect, sai số float một chút là thanh cuộn nhấp nháy.
+        /// Vài pixel dư đẩy nó hẳn về phía "nội dung vừa khung".
+        /// </summary>
+        const float ScrollSlack = 4f;
+
         RectTransform _self;
         float _lastApplied = -1f;
 
@@ -52,7 +59,8 @@ namespace OnDi.VerifyAccount
             if (_lastApplied < 0f) LayoutRebuilder.ForceRebuildLayoutImmediate(content);
 
             var max = parent.rect.height * maxScreenRatio;
-            var wanted = Mathf.Min(LayoutUtility.GetPreferredHeight(content) + extraHeight, max);
+            var wanted = Mathf.Min(
+                LayoutUtility.GetPreferredHeight(content) + extraHeight + ScrollSlack, max);
 
             if (Mathf.Abs(wanted - _lastApplied) < 0.5f) return;
             _lastApplied = wanted;

@@ -4,7 +4,10 @@
       "version": "file:com.ondigames.verifyaccount",
       "depth": 0,
       "source": "embedded",
-      "dependencies": {}
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.textmeshpro": "3.0.6"
+      }
     },
     "com.unity.collab-proxy": {
       "version": "2.12.4",
