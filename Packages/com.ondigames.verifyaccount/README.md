@@ -47,7 +47,7 @@ Các mục hay dùng:
 | `uiFont`, `uiFontMaterial` | **Font TextMeshPro cho toàn bộ chữ của SDK** — xem mục 3 |
 | `badgeSprite`, `badgeTooltipText`, `tooltipAutoHideSeconds` | Badge 18+ |
 | `badgeIdleAlpha`, `badgeFadeSeconds` | Độ mờ của badge lúc nằm yên |
-| `dailyPlayLimitMinutes`, `showBadgeTooltipOnDailyLimit` | Bộ đếm thời gian chơi |
+| `autoStartPlaytime`, `dailyPlayLimitMinutes`, `showBadgeTooltipOnDailyLimit` | Bộ đếm thời gian chơi |
 
 ## 3. Font riêng cho từng project
 
@@ -94,7 +94,6 @@ public class Bootstrap : MonoBehaviour
 
         VerifyAccountSdk.Show();                 // bỏ qua nếu đã xác thực rồi
         VerifyAccountSdk.FloatButton.Show();     // badge 18+
-        VerifyAccountSdk.Playtime.Start();       // bắt đầu đếm giờ chơi
     }
 }
 ```
@@ -151,6 +150,10 @@ muốn vứt hết sửa đổi và làm lại từ đầu.
 Icon 18+, dấu tick và bong bóng tooltip là ảnh vẽ tạm theo bản demo. Thay icon badge bằng
 `badgeSprite` trong Settings, hoặc thay thẳng file trong `Resources/OnDiVerify/Sprites`.
 
+Bong bóng của badge chia hai cột: cột "18+" cố định nằm trong prefab, cột chữ lấy từ
+`badgeTooltipText`. Chuỗi mặc định có sẵn ký tự xuống dòng để ngắt câu đúng chỗ như bản
+thiết kế — tự đặt chuỗi khác thì tự chọn chỗ xuống dòng, bong bóng cao theo số dòng.
+
 Form có sẵn `ScrollRect` với thanh cuộn dọc để ở chế độ *auto hide*: nội dung vừa khung
 thì không thấy thanh nào và form rộng nguyên, chỉ khi bị co — màn ngang, máy màn ngắn,
 chữ xuống dòng nhiều — thanh cuộn mới hiện ra và viewport hẹp lại nhường chỗ cho nó.
@@ -164,17 +167,22 @@ Không bị `Time.timeScale` ảnh hưởng, không tính lúc app chạy nền,
 `PlayerPrefs` nên thoát game mở lại vẫn cộng tiếp trong cùng ngày. **Qua ngày mới bộ đếm
 và cờ đã cảnh báo cùng về 0.**
 
+Bộ đếm **tự chạy ngay khi game khởi động**, nên chỉ cần gắn callback:
+
 ```csharp
 VerifyAccountSdk.Playtime.DailyLimitReached += total =>
     MyUi.ShowWarning($"Bạn đã chơi {total.TotalMinutes:0} phút hôm nay.");
-
-VerifyAccountSdk.Playtime.Start();
 ```
+
+Đây là **ngoại lệ duy nhất** của quy tắc "SDK không tự sinh gì" — panel và badge vẫn chỉ
+xuất hiện khi game gọi. Lý do: mốc cảnh báo phải tính từ lúc mở game, chờ game gọi `Start()`
+thì phần thời gian trước đó mất trắng. Tắt `autoStartPlaytime` trong Settings nếu muốn tự
+chọn thời điểm bắt đầu.
 
 | Thành viên | Mô tả |
 |---|---|
 | `DailyLimitReached` | Sự kiện `Action<TimeSpan>`, phát **đúng một lần mỗi ngày** khi vượt mốc |
-| `Start()` / `Stop()` / `IsRunning` | Bật, tạm dừng, kiểm tra bộ đếm |
+| `Start()` / `Stop()` / `IsRunning` | Bật, tạm dừng, kiểm tra bộ đếm. `Start()` thừa nếu `autoStartPlaytime` đang bật |
 | `Today` | Tổng thời gian đã chơi hôm nay, đọc được cả khi chưa `Start()` |
 | `RemainingToday` | Còn bao lâu nữa thì chạm mốc |
 | `LimitReachedToday` | Hôm nay đã cảnh báo hay chưa |
@@ -185,6 +193,10 @@ cảnh báo. Chạm mốc mà badge 18+ đang hiện thì SDK bật luôn bong b
 tắt `showBadgeTooltipOnDailyLimit` nếu game muốn tự dựng popup trong callback.
 
 Callback ném exception cũng không làm chết bộ đếm, SDK log lại rồi chạy tiếp.
+
+PlayerPrefs chỉ được ghi ở những mốc có thật — vào nền, thoát game, `Stop()`, sang ngày mới,
+chạm mốc cảnh báo — chứ không ghi định kỳ. Đổi lại, app bị giết mà không kịp gọi
+`OnApplicationPause` (thường chỉ khi crash) thì mất phần chưa lưu của phiên đó.
 
 ## 9. Giới hạn đã biết
 

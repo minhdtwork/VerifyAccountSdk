@@ -191,11 +191,15 @@ namespace OnDi.VerifyAccount
         /// (không tính lúc app chạy nền, không bị <c>Time.timeScale</c> ảnh hưởng), lưu vào
         /// PlayerPrefs nên thoát game mở lại vẫn cộng tiếp trong cùng ngày.
         ///
+        /// <para>Mặc định bộ đếm <b>tự chạy</b> ngay khi game khởi động, nên chỉ cần gắn callback:</para>
+        ///
         /// <code>
         /// VerifyAccountSdk.Playtime.DailyLimitReached += total =>
         ///     MyUi.ShowWarning($"Bạn đã chơi {total.TotalMinutes:0} phút hôm nay.");
-        /// VerifyAccountSdk.Playtime.Start();
         /// </code>
+        ///
+        /// <para>Tắt <see cref="VerifyAccountSettings.autoStartPlaytime"/> nếu muốn tự chọn thời
+        /// điểm bắt đầu bằng <see cref="Start"/>.</para>
         /// </summary>
         public static class Playtime
         {
@@ -206,7 +210,10 @@ namespace OnDi.VerifyAccount
             /// </summary>
             public static event Action<TimeSpan> DailyLimitReached;
 
-            /// <summary>Bắt đầu đếm. Lần gọi đầu mới sinh GameObject.</summary>
+            /// <summary>
+            /// Bắt đầu đếm. Không cần gọi nếu <see cref="VerifyAccountSettings.autoStartPlaytime"/>
+            /// đang bật. Gọi lại khi đang chạy cũng không sao.
+            /// </summary>
             public static void Start() => PlaytimeTracker.StartTracking();
 
             /// <summary>Tạm dừng đếm và chốt sổ xuống PlayerPrefs.</summary>

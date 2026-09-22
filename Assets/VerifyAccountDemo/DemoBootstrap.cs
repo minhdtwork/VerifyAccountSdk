@@ -31,7 +31,7 @@ public sealed class DemoBootstrap : MonoBehaviour
         // Cảnh báo chơi quá lâu: phát đúng một lần mỗi ngày.
         VerifyAccountSdk.Playtime.DailyLimitReached += total =>
             SetLog("Đã chơi " + (int)total.TotalMinutes + " phút hôm nay — cảnh báo sức khỏe.");
-        VerifyAccountSdk.Playtime.Start();
+        // Không gọi Playtime.Start(): autoStartPlaytime trong Settings lo việc đó.
     }
 
     static async Task<SdkResult> FakeSendOtp(SendOtpRequest request)

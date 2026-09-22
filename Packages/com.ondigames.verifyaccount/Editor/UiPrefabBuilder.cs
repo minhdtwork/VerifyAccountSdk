@@ -43,6 +43,15 @@ namespace OnDi.VerifyAccount.Editor
         const float ScrollbarInset = 10f;   // cách mép phải panel
         const float ScrollbarVInset = 8f;   // tránh góc bo của khung
 
+        // Bong bóng badge: cột "18+" bên trái, gạch dọc, rồi chữ cảnh báo.
+        const float TooltipWidth = 560f;
+        const float TooltipFrame = 19f;     // lề trắng + viền đen vẽ sẵn trong bubble.png
+        const float TooltipMarkWidth = 150f;
+        const float TooltipDividerX = TooltipFrame + TooltipMarkWidth;
+        const float TooltipTextInset = 12f; // chữ cách gạch dọc
+        const float TooltipTailWidth = 64f;
+        const float TooltipTailHeight = 44f;
+
         const float FontTitle = 40f;
         const float FontBody = 31f;
         const float FontField = 30f;
@@ -442,21 +451,25 @@ namespace OnDi.VerifyAccount.Editor
             // Mờ/rõ chạy qua CanvasGroup để một lần đổi là cả badge lẫn bong bóng cùng theo.
             var canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
 
-            var label = NewLabel("Label", root, "18+", new Color32(0x22, 0x33, 0x55, 0xFF), 44f,
+            var label = NewLabel("Label", root, "18<sup>+</sup>", new Color32(0x22, 0x33, 0x55, 0xFF), 44f,
                                  TextAlignmentOptions.Center, bold: true, height: 0f);
             Stretch(label.rectTransform);
             label.raycastTarget = false;
 
             var tooltip = NewUi("Tooltip", root);
             tooltip.anchorMin = tooltip.anchorMax = tooltip.pivot = new Vector2(0.5f, 0.5f);
-            tooltip.sizeDelta = new Vector2(560f, 180f);
+            tooltip.sizeDelta = new Vector2(TooltipWidth, 220f);
             var bubble = tooltip.gameObject.AddComponent<Image>();
             bubble.sprite = Sprite("bubble.png");
             bubble.type = Image.Type.Sliced;
             bubble.raycastTarget = true;
 
+            // Chỉ chữ nằm trong layout; cột "18+" và gạch dọc neo tuyệt đối nên chúng cao
+            // bằng bong bóng dù bong bóng co giãn theo số dòng chữ.
             var bubbleVlg = tooltip.gameObject.AddComponent<VerticalLayoutGroup>();
-            bubbleVlg.padding = new RectOffset(28, 28, 24, 24);
+            bubbleVlg.padding = new RectOffset(
+                (int)(TooltipDividerX + TooltipTextInset), (int)TooltipFrame + 10,
+                (int)TooltipFrame + 10, (int)TooltipFrame + 10);
             bubbleVlg.childControlWidth = true;
             bubbleVlg.childControlHeight = true;
             bubbleVlg.childForceExpandWidth = true;
@@ -464,13 +477,26 @@ namespace OnDi.VerifyAccount.Editor
             var bubbleFitter = tooltip.gameObject.AddComponent<ContentSizeFitter>();
             bubbleFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            var mark = NewLabel("Mark", tooltip, "18<sup>+</sup>", TextDark, 82f,
+                                TextAlignmentOptions.Center, bold: true, height: 0f);
+            mark.enableWordWrapping = false; // "+" không được rơi xuống dòng dưới
+            mark.raycastTarget = false;
+            StretchColumn(mark.rectTransform, TooltipFrame + TooltipMarkWidth * 0.5f,
+                          TooltipMarkWidth, TooltipFrame);
+
+            var divider = NewUi("Divider", tooltip);
+            var dividerImage = divider.gameObject.AddComponent<Image>();
+            dividerImage.color = TextDark;
+            dividerImage.raycastTarget = false;
+            StretchColumn(divider, TooltipDividerX, 3f, TooltipFrame);
+
             var text = NewLabel("Text", tooltip,
-                                "Chơi quá 180 phút một ngày sẽ ảnh hưởng xấu đến sức khỏe",
-                                TextDark, 30f, TextAlignmentOptions.Center, bold: true, height: 0f);
+                                VerifyAccountSettings.DefaultBadgeTooltipText,
+                                TextDark, 36f, TextAlignmentOptions.Center, bold: true, height: 0f);
             text.raycastTarget = false;
 
             var tail = NewUi("Tail", tooltip);
-            tail.sizeDelta = new Vector2(30f, 46f);
+            tail.sizeDelta = new Vector2(TooltipTailWidth, TooltipTailHeight);
             var tailImage = tail.gameObject.AddComponent<Image>();
             tailImage.sprite = Sprite("bubble_tail.png");
             tailImage.raycastTarget = false;
@@ -508,6 +534,20 @@ namespace OnDi.VerifyAccount.Editor
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.offsetMin = new Vector2(left, bottom);
             rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        /// <summary>
+        /// Cột cao bằng cha, rộng cố định, đo từ mép trái cha — và đứng ngoài layout group để
+        /// cha co giãn bao nhiêu cột cũng theo.
+        /// </summary>
+        static void StretchColumn(RectTransform rect, float centerX, float width, float vInset)
+        {
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(width, -vInset * 2f);
+            rect.anchoredPosition = new Vector2(centerX, 0f);
+            rect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
         }
 
         static TextMeshProUGUI NewLabel(string name, RectTransform parent, string content, Color color,
