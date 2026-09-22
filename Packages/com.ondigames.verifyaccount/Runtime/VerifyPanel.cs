@@ -155,13 +155,27 @@ namespace OnDi.VerifyAccount
             {
                 _maskingDate = true;
                 dobInput.text = masked;
-                dobInput.caretPosition = masked.Length;
+
+                // Phải là stringPosition chứ không phải caretPosition. caretPosition đếm theo
+                // ký tự đã dựng hình và bị kẹp vào `characterCount - 1` của textInfo — mà lúc này
+                // textInfo vẫn là của chuỗi cũ, ngắn hơn một ký tự. Kết quả: con trỏ tụt về trước
+                // ký tự vừa gõ, đúng lúc mask chèn thêm dấu "/" (tức từ phần tháng trở đi).
+                // stringPosition kẹp theo text.Length nên không dính, TMP tự quy ra chỗ con trỏ
+                // sau khi label cập nhật xong.
+                dobInput.stringPosition = masked.Length;
                 _maskingDate = false;
             }
 
-            Clear(dobError);
+            ValidateDobLive();
             Refresh();
         }
+
+        /// <summary>
+        /// Báo lỗi ngay khi gõ đủ <c>dd/mm/yyyy</c> thay vì đợi tới lúc bấm "Hoàn thành".
+        /// Gõ dở thì im lặng — không ai muốn bị mắng lúc mới bấm được hai chữ số.
+        /// </summary>
+        void ValidateDobLive() =>
+            Show(dobError, VerifyValidator.DescribeBirthDateProblem(dobInput.text, _settings.minAge));
 
         bool PhoneOk => VerifyValidator.IsPhoneValid(phoneInput.text, _settings.phoneRegex);
         bool NameOk => VerifyValidator.IsNameValid(nameInput.text);
@@ -175,9 +189,9 @@ namespace OnDi.VerifyAccount
         void Refresh()
         {
             sendOtpButton.interactable = !_busy && !_otpSent && NameOk && PhoneOk;
-            sendOtpButton.gameObject.SetActive(!_otpSent);
+            SetRowVisible(sendOtpButton, !_otpSent);
 
-            resendButton.gameObject.SetActive(_otpSent);
+            SetRowVisible(resendButton, _otpSent);
             resendButton.interactable = !_busy && Time.unscaledTime >= _resendReadyAt;
 
             otpInput.interactable = _otpSent && !_busy;
@@ -186,6 +200,18 @@ namespace OnDi.VerifyAccount
             submitButton.interactable = can;
             if (submitImage != null)
                 submitImage.sprite = can ? submitEnabledSprite : submitDisabledSprite;
+        }
+
+        /// <summary>
+        /// Ẩn cả hàng chứ không chỉ ẩn nút. Nút nằm trong một hàng riêng để canh trái được, mà
+        /// hàng mới là mục của layout group — ẩn mỗi nút thì hàng vẫn giữ nguyên chiều cao và
+        /// form thủng một mảng trống.
+        /// </summary>
+        static void SetRowVisible(Component inRow, bool visible)
+        {
+            var parent = inRow.transform.parent;
+            var row = parent != null ? parent.gameObject : inRow.gameObject;
+            if (row.activeSelf != visible) row.SetActive(visible);
         }
 
         async void SendOtp(bool resend)

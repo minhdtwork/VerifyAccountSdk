@@ -40,16 +40,16 @@ using OnDi.VerifyAccount;
         game gọi VerifyAccountSdk.Show()
                     │
                     ▼
-        ┌───────────────────────┐
-        │  form: họ tên + SĐT   │
-        └───────────┬───────────┘
+        ┌───────────────────────────────────┐
+        │  form: họ tên + ngày sinh + SĐT   │
+        └───────────┬───────────────────────┘
                     │ bấm "Gửi OTP"
                     ▼
             OnSendOtp(SendOtpRequest)        ──fail──▶ Message hiện dưới ô SĐT
                     │ ok
                     ▼
         ┌───────────────────────────────────────────┐
-        │  nhập OTP + ngày sinh + tick 2 điều khoản │
+        │  nhập OTP + tick 2 điều khoản             │
         │  (đồng hồ otpTtlSeconds đang chạy)        │
         └───────────┬───────────────────────────────┘
                     │ bấm "Hoàn thành"
@@ -538,6 +538,15 @@ Form tự kiểm tra trước khi gọi backend. Nút "Hoàn thành" chỉ sáng
 Ô ngày sinh tự chèn dấu `/` trong lúc gõ: `11031991` thành `11/03/1991`. Ký tự không phải
 chữ số bị bỏ qua.
 
+Ngày và tháng một chữ số cũng tự được thêm `0`, ngay khi đoán chắc chắn được: không ngày nào
+bắt đầu bằng **4–9** và không tháng nào bắt đầu bằng **2–9**, nên gõ `5` `3` `1` `9` `9` `1`
+ra thẳng `05/03/1991`. Chữ số còn mập mờ thì đợi phím sau — `1` ở ô tháng có thể là tháng 1
+mà cũng có thể là đầu của tháng 10, 11, 12; muốn chốt sớm thì gõ `01`.
+
+Gõ đủ `dd/mm/yyyy` mà sai ngày hoặc **chưa đủ `minAge` tuổi** thì dòng cảnh báo đỏ hiện ngay
+dưới ô, không phải đợi bấm "Hoàn thành" — xem
+[`DescribeBirthDateProblem`](#13-verifyvalidator).
+
 Regex hỏng trong Settings không làm sập form — nó chỉ khiến mọi số điện thoại bị coi là
 không hợp lệ.
 
@@ -549,8 +558,21 @@ hiện dòng nhắc và nút "Hoàn thành" tắt cho tới khi gửi lại.
 ## 12. VerifyAccountSettings
 
 `ScriptableObject` tạo bằng **Create > OnDi > Verify Account Settings**, đặt ở một thư mục
-`Resources` bất kỳ, **giữ nguyên tên file `VerifyAccountSettings`**. Thiếu file thì SDK
-chạy bằng giá trị mặc định và log một dòng nhắc.
+`Resources` bất kỳ, **giữ nguyên tên file `VerifyAccountSettings`**.
+
+SDK nạp theo đúng thứ tự này, lần đầu ai đó đọc `VerifyAccountSdk.Settings`:
+
+1. `Resources.Load("VerifyAccountSettings")` — file của game, nếu có.
+2. `Resources.Load("OnDiVerify/DefaultSettings")` — bản đóng gói sẵn trong package, để cài
+   xong là chạy được ngay.
+3. Không có cả hai thì `CreateInstance` giá trị khởi tạo của class, kèm một dòng log nhắc.
+
+Hai bước đầu cố tình mang **hai tên khác nhau**: hai asset trùng tên nằm ở hai thư mục
+`Resources` thì `Resources.Load` trả về cái nào là không xác định, và bản của package sẽ có
+lúc đè mất cấu hình của game. Tên khác nhau nên file của game luôn thắng.
+
+Kết quả được nhớ lại (`static`), nên đổi file lúc chạy không có tác dụng — đổi từng trường
+trên `VerifyAccountSdk.Settings` thì được.
 
 | Trường | Kiểu | Mặc định | Ý nghĩa |
 |---|---|---|---|
@@ -604,13 +626,22 @@ public static class VerifyValidator
     public static bool   TryParseBirthDate(string text, int minAge, out DateTime date);
     public static bool   TryParseBirthDate(string text, int minAge, DateTime today, out DateTime date);
     public static int    AgeOn(DateTime birth, DateTime onDate);
-    public static string MaskDate(string raw);              // "11031991" → "11/03/1991"
+    public static string MaskDate(string raw);              // "531991" → "05/03/1991"
     public static string FormatCountdown(float secondsLeft); // 95f → "1:35"
+
+    // null = chưa có gì để nói (gõ dở, hoặc ngày hợp lệ và đủ tuổi)
+    public static string DescribeBirthDateProblem(string text, int minAge);
+    public static string DescribeBirthDateProblem(string text, int minAge, DateTime today);
 }
 ```
 
 Bản `TryParseBirthDate` có tham số `today` nhận mốc "hôm nay" từ ngoài, để test không phụ
 thuộc đồng hồ máy.
+
+`DescribeBirthDateProblem` là thứ form dùng để báo lỗi **ngay trong lúc gõ** ô ngày sinh:
+gõ chưa đủ `dd/mm/yyyy` thì trả `null` (chưa mắng vội), sai ngày thì trả "Ngày sinh không
+hợp lệ.", còn đủ ngày nhưng chưa đạt `minAge` thì trả câu chưa đủ tuổi. Nó tách hai lỗi ra
+làm hai câu, khác `TryParseBirthDate` chỉ trả `true`/`false` cho cả hai.
 
 ```csharp
 if (!VerifyValidator.IsPhoneValid(input, VerifyAccountSdk.Settings.phoneRegex))

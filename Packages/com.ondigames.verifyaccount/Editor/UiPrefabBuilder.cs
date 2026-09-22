@@ -52,6 +52,13 @@ namespace OnDi.VerifyAccount.Editor
         const float TooltipTailWidth = 64f;
         const float TooltipTailHeight = 44f;
 
+        // Đoạn dẫn theo yêu cầu pháp lý, nằm ngay dưới tiêu đề form.
+        const string IntroText =
+            "Theo Nghị Định 147/2024/NĐ-CP, người chơi phải cung cấp thông tin dưới đây và " +
+            "thực hiện xác minh số điện thoại để có thể tiếp tục sử dụng dịch vụ.";
+        const float LabelTopGap = 10f;  // khoảng trống trên nhãn, để nhãn dính vào ô của nó
+        const float CharacterSpacing = -6f;  // giãn cách chữ, dùng chung cho mọi chữ của SDK
+
         const float FontTitle = 40f;
         const float FontBody = 31f;
         const float FontField = 30f;
@@ -217,14 +224,22 @@ namespace OnDi.VerifyAccount.Editor
             // --- nội dung form, đúng thứ tự trong demo ---
             NewLabel("Title", content, "Xác thực thông tin", TextDark, FontTitle,
                      TextAlignmentOptions.Center, bold: true, height: 62f);
-            NewLabel("Subtitle", content, "Vui lòng xác thực để tiếp tục dịch vụ.", TextBody, FontBody,
-                     TextAlignmentOptions.Left, bold: true, height: 50f);
+            // Đoạn dẫn xuống dòng theo bề ngang form nên để cao tự do, đừng chốt chiều cao.
+            NewLabel("Subtitle", content, IntroText, TextBody, FontBody,
+                     TextAlignmentOptions.Left, bold: true, height: 0f);
 
-            var nameInput = NewField("NameField", content, "Nhập họ và tên",
+            FieldLabel("LabelName", content, "Họ và Tên", required: true);
+            var nameInput = NewField("NameField", content, "Họ và Tên",
                                      TMP_InputField.ContentType.Standard, TouchScreenKeyboardType.Default, 50);
             var nameError = NewError("NameError", content);
 
-            var phoneInput = NewField("PhoneField", content, "Nhập số điện thoại",
+            FieldLabel("LabelDob", content, "Ngày sinh", required: true);
+            var dobInput = NewField("DobField", content, "dd/mm/yyyy",
+                                    TMP_InputField.ContentType.Custom, TouchScreenKeyboardType.NumberPad, 10);
+            var dobError = NewError("DobError", content);
+
+            FieldLabel("LabelPhone", content, "Số điện thoại", required: true);
+            var phoneInput = NewField("PhoneField", content, "Số điện thoại",
                                       TMP_InputField.ContentType.Custom, TouchScreenKeyboardType.PhonePad, 15);
             var phoneError = NewError("PhoneError", content);
 
@@ -232,6 +247,7 @@ namespace OnDi.VerifyAccount.Editor
                                     "btn_cam.png", "Gửi OTP", Color.white, FontButton);
             SetLayoutSize(sendOtp.transform, 215f, 80f);
 
+            FieldLabel("LabelOtp", content, "Mã OTP");
             var otpInput = NewField("OtpField", content, "Nhập mã OTP",
                                     TMP_InputField.ContentType.IntegerNumber, TouchScreenKeyboardType.NumberPad, 6);
 
@@ -242,10 +258,6 @@ namespace OnDi.VerifyAccount.Editor
             var countdown = NewLabel("Countdown", content, "OTP hết hạn sau 3:00", TextBody, FontBody,
                                      TextAlignmentOptions.Left, bold: true, height: 48f);
             var otpError = NewError("OtpError", content);
-
-            var dobInput = NewField("DobField", content, "dd/mm/yyyy",
-                                    TMP_InputField.ContentType.Custom, TouchScreenKeyboardType.NumberPad, 10);
-            var dobError = NewError("DobError", content);
 
             // hàng tiêu đề nhóm điều khoản + mũi tên gập
             var agreeHeader = NewRow("RowAgreeHeader", content, 0f);
@@ -550,6 +562,20 @@ namespace OnDi.VerifyAccount.Editor
             rect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
         }
 
+        /// <summary>
+        /// Nhãn của một ô nhập. Chừa thêm khoảng trống phía trên để nhãn dính vào ô của nó thay
+        /// vì lơ lửng đều giữa hai ô — layout group chỉ có một mức spacing dùng chung.
+        /// </summary>
+        static void FieldLabel(string name, RectTransform content, string text, bool required = false)
+        {
+            if (required)
+                text += " <color=#" + ColorUtility.ToHtmlStringRGB(ErrorRed) + ">*</color>";
+
+            var label = NewLabel(name, content, text, TextDark, FontBody,
+                                 TextAlignmentOptions.Left, bold: true, height: 0f);
+            label.margin = new Vector4(0f, LabelTopGap, 0f, 0f);
+        }
+
         static TextMeshProUGUI NewLabel(string name, RectTransform parent, string content, Color color,
                                         float size, TextAlignmentOptions alignment, bool bold, float height)
         {
@@ -564,6 +590,7 @@ namespace OnDi.VerifyAccount.Editor
             text.enableWordWrapping = true;
             text.overflowMode = TextOverflowModes.Overflow;
             text.lineSpacing = 8f;
+            text.characterSpacing = CharacterSpacing;
             text.margin = Vector4.zero;
             if (height > 0f) SetLayoutSize(rect, 0f, height, preferHeightOnly: true);
             return text;

@@ -31,10 +31,15 @@ import hộ nếu thiếu.)
 
 ## 2. Cấu hình
 
-Create > **OnDi** > **Verify Account Settings**, đặt file vào một thư mục `Resources`
-bất kỳ và **giữ nguyên tên `VerifyAccountSettings`**.
+**Cài xong là chạy được ngay** — SDK có sẵn một file cấu hình mặc định trong
+`Resources/OnDiVerify/DefaultSettings`, không cần làm gì thêm để bấm Play thử.
 
-Thiếu file này SDK vẫn chạy bằng giá trị mặc định, chỉ log một dòng nhắc.
+Muốn cấu hình riêng thì Create > **OnDi** > **Verify Account Settings**, đặt file vào một
+thư mục `Resources` bất kỳ của game và **giữ nguyên tên `VerifyAccountSettings`**. SDK tìm
+file của game trước, không thấy mới dùng bản mặc định — file của game luôn thắng.
+
+> Đừng đặt file của game tên `DefaultSettings` trong `Resources/OnDiVerify`, và cũng đừng
+> sửa thẳng bản mặc định trong package: cập nhật SDK là mất hết.
 
 Các mục hay dùng:
 
@@ -151,6 +156,10 @@ mở ra sửa layout, màu, chữ như bình thường.
 
 Menu **Tools > OnDi Verify > Rebuild UI Prefabs** dựng lại cả hai từ code — chỉ dùng khi
 muốn vứt hết sửa đổi và làm lại từ đầu.
+
+Mỗi ô nhập có một nhãn riêng ngay phía trên (`LabelName`, `LabelDob`, `LabelPhone`,
+`LabelOtp`), và node `Subtitle` giữ đoạn dẫn Nghị Định 147/2024/NĐ-CP. Cả hai đều là chữ
+cố định trong prefab, không đi qua Settings — muốn đổi thì sửa thẳng trong prefab.
 
 Icon 18+, dấu tick và bong bóng tooltip là ảnh vẽ tạm theo bản demo. Thay icon badge bằng
 `badgeSprite` trong Settings, hoặc thay thẳng file trong `Resources/OnDiVerify/Sprites`.

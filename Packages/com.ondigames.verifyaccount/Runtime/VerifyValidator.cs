@@ -59,6 +59,25 @@ namespace OnDi.VerifyAccount
             return minAge <= 0 || AgeOn(date, today) >= minAge;
         }
 
+        /// <summary>
+        /// Câu cảnh báo cho ô ngày sinh trong lúc người chơi đang gõ, hoặc <c>null</c> khi chưa
+        /// có gì để nói — gõ dở hoặc ngày đã hợp lệ. Tách riêng khỏi
+        /// <see cref="TryParseBirthDate(string,int,out DateTime)"/> vì "sai ngày" và "chưa đủ
+        /// tuổi" cần hai câu khác nhau.
+        /// </summary>
+        public static string DescribeBirthDateProblem(string text, int minAge) =>
+            DescribeBirthDateProblem(text, minAge, DateTime.Today);
+
+        /// <summary>Bản nhận mốc "hôm nay" từ ngoài để test không phụ thuộc đồng hồ máy.</summary>
+        public static string DescribeBirthDateProblem(string text, int minAge, DateTime today)
+        {
+            if (text == null || text.Length < DateFormat.Length) return null;
+            if (!TryParseBirthDate(text, 0, today, out var birth)) return "Ngày sinh không hợp lệ.";
+            if (minAge > 0 && AgeOn(birth, today) < minAge)
+                return "Bạn chưa đủ " + minAge + " tuổi để sử dụng dịch vụ.";
+            return null;
+        }
+
         public static int AgeOn(DateTime birth, DateTime onDate)
         {
             var age = onDate.Year - birth.Year;
@@ -69,6 +88,12 @@ namespace OnDi.VerifyAccount
         /// <summary>
         /// Chèn dấu <c>/</c> trong lúc gõ: <c>"11031991"</c> thành <c>"11/03/1991"</c>.
         /// Mọi ký tự không phải chữ số đều bị bỏ, tối đa 8 chữ số.
+        ///
+        /// <para>Chữ số đầu của ô ngày mà từ <c>4</c> trở lên, hoặc của ô tháng mà từ <c>2</c>
+        /// trở lên, thì tự thêm <c>0</c> đằng trước rồi sang ô kế tiếp luôn — không ngày nào
+        /// bắt đầu bằng 4–9 và không tháng nào bắt đầu bằng 2–9, nên đoán được chắc chắn.
+        /// Ngược lại (1–3 ở ô ngày, 1 ở ô tháng) phải đợi phím sau mới biết, vì còn ngày
+        /// 10–31 và tháng 10–12; muốn chốt sớm thì gõ thẳng <c>"01"</c>.</para>
         /// </summary>
         public static string MaskDate(string raw)
         {
@@ -83,9 +108,45 @@ namespace OnDi.VerifyAccount
             }
 
             var d = digits.ToString();
-            if (d.Length <= 2) return d;
-            if (d.Length <= 4) return d.Substring(0, 2) + "/" + d.Substring(2);
-            return d.Substring(0, 2) + "/" + d.Substring(2, 2) + "/" + d.Substring(4);
+            if (d.Length == 0) return string.Empty;
+
+            var i = 0;
+            if (!TakeDatePart(d, ref i, '4', out var day)) return day;
+            if (i >= d.Length) return day;
+            if (!TakeDatePart(d, ref i, '2', out var month)) return day + "/" + month;
+            if (i >= d.Length) return day + "/" + month;
+
+            var year = d.Substring(i);
+            if (year.Length > 4) year = year.Substring(0, 4);
+            return day + "/" + month + "/" + year;
+        }
+
+        /// <summary>
+        /// Lấy hai chữ số cho một ô của ngày tháng. Chữ số đầu từ <paramref name="padFrom"/>
+        /// trở lên thì không thể là hàng chục, tự thêm <c>0</c> và coi như xong ô. Trả
+        /// <c>false</c> khi mới có một chữ số còn mập mờ — khi đó <paramref name="part"/> là
+        /// phần đang gõ dở.
+        /// </summary>
+        static bool TakeDatePart(string digits, ref int i, char padFrom, out string part)
+        {
+            var first = digits[i];
+            if (first >= padFrom)
+            {
+                part = "0" + first;
+                i++;
+                return true;
+            }
+
+            if (digits.Length - i >= 2)
+            {
+                part = digits.Substring(i, 2);
+                i += 2;
+                return true;
+            }
+
+            part = first.ToString();
+            i++;
+            return false;
         }
 
         /// <summary>Định dạng giây còn lại thành <c>m:ss</c> cho dòng "OTP hết hạn sau".</summary>

@@ -73,13 +73,21 @@ namespace OnDi.VerifyAccount
             {
                 if (_settings != null) return _settings;
 
+                // File của game trước, không có thì rơi về bản đóng gói sẵn trong SDK. Thứ tự
+                // này là cố định, không phụ thuộc việc Resources.Load chọn cái nào khi trùng tên.
+                // Dùng `==` chứ không dùng `??`: toán tử null của C# bỏ qua phép so sánh null
+                // riêng của UnityEngine.Object.
                 _settings = Resources.Load<VerifyAccountSettings>(VerifyAccountSettings.ResourceName);
+                if (_settings == null)
+                    _settings = Resources.Load<VerifyAccountSettings>(
+                        VerifyAccountSettings.DefaultResourcePath);
+
                 if (_settings == null)
                 {
                     Debug.LogWarning(
                         "[VerifyAccount] Không tìm thấy Resources/" + VerifyAccountSettings.ResourceName +
-                        ". Đang chạy bằng giá trị mặc định. Tạo file bằng Create > OnDi > Verify Account Settings " +
-                        "rồi đặt vào một thư mục Resources.");
+                        " lẫn bản mặc định của SDK. Đang chạy bằng giá trị khởi tạo. Tạo file bằng " +
+                        "Create > OnDi > Verify Account Settings rồi đặt vào một thư mục Resources.");
                     _settings = ScriptableObject.CreateInstance<VerifyAccountSettings>();
                 }
                 return _settings;

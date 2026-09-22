@@ -13,6 +13,14 @@ namespace OnDi.VerifyAccount
     {
         public const string ResourceName = "VerifyAccountSettings";
 
+        /// <summary>
+        /// Bản mặc định đóng gói sẵn trong SDK, dùng khi game chưa tạo file riêng — cài xong là
+        /// chạy được ngay. Cố tình đặt tên khác <see cref="ResourceName"/>: hai asset trùng tên
+        /// trong hai thư mục <c>Resources</c> thì <c>Resources.Load</c> trả về cái nào là không
+        /// xác định, và bản của package sẽ có lúc đè mất cấu hình của game.
+        /// </summary>
+        public const string DefaultResourcePath = "OnDiVerify/DefaultSettings";
+
         [Header("Policy Links")]
         [Tooltip("Mở khi người chơi bấm vào dòng \"Điều khoản sử dụng\".")]
         public string termsUrl = "";
