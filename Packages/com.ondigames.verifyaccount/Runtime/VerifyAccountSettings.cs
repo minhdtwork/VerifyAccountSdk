@@ -61,8 +61,12 @@ namespace OnDi.VerifyAccount
         [Tooltip("Để trống thì dùng icon mặc định trong prefab.")]
         public Sprite badgeSprite;
 
+        /// <summary>Xuống dòng cố định để bong bóng ngắt câu đúng chỗ như bản thiết kế.</summary>
+        public const string DefaultBadgeTooltipText =
+            "Chơi quá\n180 phút một ngày\nsẽ ảnh hưởng xấu\nđến sức khỏe";
+
         [TextArea(2, 4)]
-        public string badgeTooltipText = "Chơi quá 180 phút một ngày sẽ ảnh hưởng xấu đến sức khỏe";
+        public string badgeTooltipText = DefaultBadgeTooltipText;
 
         [Tooltip("Tự tắt bong bóng sau bao nhiêu giây. 0 là không tự tắt.")]
         [Min(0f)] public float tooltipAutoHideSeconds = 4f;

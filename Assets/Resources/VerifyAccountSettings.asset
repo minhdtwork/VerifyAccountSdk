@@ -23,6 +23,5 @@ MonoBehaviour:
   resendCooldownSeconds: 60
   showSkipButton: 1
   badgeSprite: {fileID: 0}
-  badgeTooltipText: "Ch\u01A1i qu\xE1 180 ph\xFAt m\u1ED9t ng\xE0y s\u1EBD \u1EA3nh
-    h\u01B0\u1EDFng x\u1EA5u \u0111\u1EBFn s\u1EE9c kh\u1ECFe"
+  badgeTooltipText: "Ch\u01A1i qu\xE1\n180 ph\xFAt m\u1ED9t ng\xE0y\ns\u1EBD \u1EA3nh h\u01B0\u1EDFng x\u1EA5u\n\u0111\u1EBFn s\u1EE9c kh\u1ECFe"
   tooltipAutoHideSeconds: 4

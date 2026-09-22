@@ -151,6 +151,10 @@ muốn vứt hết sửa đổi và làm lại từ đầu.
 Icon 18+, dấu tick và bong bóng tooltip là ảnh vẽ tạm theo bản demo. Thay icon badge bằng
 `badgeSprite` trong Settings, hoặc thay thẳng file trong `Resources/OnDiVerify/Sprites`.
 
+Bong bóng của badge chia hai cột: cột "18+" cố định nằm trong prefab, cột chữ lấy từ
+`badgeTooltipText`. Chuỗi mặc định có sẵn ký tự xuống dòng để ngắt câu đúng chỗ như bản
+thiết kế — tự đặt chuỗi khác thì tự chọn chỗ xuống dòng, bong bóng cao theo số dòng.
+
 Form có sẵn `ScrollRect` với thanh cuộn dọc để ở chế độ *auto hide*: nội dung vừa khung
 thì không thấy thanh nào và form rộng nguyên, chỉ khi bị co — màn ngang, máy màn ngắn,
 chữ xuống dòng nhiều — thanh cuộn mới hiện ra và viewport hẹp lại nhường chỗ cho nó.
