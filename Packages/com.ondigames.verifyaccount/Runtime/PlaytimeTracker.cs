@@ -25,8 +25,13 @@ namespace OnDi.VerifyAccount
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void AutoStart()
         {
-            var settings = Resources.Load<VerifyAccountSettings>(VerifyAccountSettings.ResourceName);
-            if (settings != null && settings.autoStartPlaytime) StartTracking();
+            if (VerifyAccountSdk.Settings.autoStartPlaytime) StartTracking();
+        }
+
+        internal static void ResetStatics()
+        {
+            _instance = null;
+            _loaded = false;
         }
 
         internal static TimeSpan Today

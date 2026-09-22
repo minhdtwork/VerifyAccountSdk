@@ -32,11 +32,17 @@ import hộ nếu thiếu.)
 ## 2. Cấu hình
 
 **Cài xong là chạy được ngay** — SDK có sẵn một file cấu hình mặc định trong
-`Resources/OnDiVerify/DefaultSettings`, không cần làm gì thêm để bấm Play thử.
+`Resources/OnDiVerify/DefaultSettings`, không cần làm gì thêm để bấm Play thử. Bản mặc định
+để trống hai link chính sách: bấm vào link chỉ có warning trong Console, không mở trang nào.
 
 Muốn cấu hình riêng thì Create > **OnDi** > **Verify Account Settings**, đặt file vào một
-thư mục `Resources` bất kỳ của game và **giữ nguyên tên `VerifyAccountSettings`**. SDK tìm
-file của game trước, không thấy mới dùng bản mặc định — file của game luôn thắng.
+thư mục `Resources` bất kỳ của game (nằm trong thư mục con của `Resources` cũng được) và
+**giữ nguyên tên `VerifyAccountSettings`**. SDK tìm file của game trước, không thấy mới dùng
+bản mặc định — file của game luôn thắng.
+
+Đặt sai chỗ hay sai tên thì Editor warning ngay lúc import file. Lúc chạy, Console có dòng
+`[VerifyAccount] No VerifyAccountSettings asset found...` nghĩa là SDK đang dùng bản mặc
+định, cấu hình của game chưa được đọc.
 
 > Đừng đặt file của game tên `DefaultSettings` trong `Resources/OnDiVerify`, và cũng đừng
 > sửa thẳng bản mặc định trong package: cập nhật SDK là mất hết.

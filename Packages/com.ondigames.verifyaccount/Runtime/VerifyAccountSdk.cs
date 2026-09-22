@@ -59,24 +59,26 @@ namespace OnDi.VerifyAccount
         {
             get
             {
-                if (_settings != null) return _settings;
-
-                _settings = Resources.Load<VerifyAccountSettings>(VerifyAccountSettings.ResourceName);
-                if (_settings == null)
-                    _settings = Resources.Load<VerifyAccountSettings>(
-                        VerifyAccountSettings.DefaultResourcePath);
-
-                if (_settings == null)
-                {
-                    Debug.LogWarning(
-                        "[VerifyAccount] Found neither Resources/" + VerifyAccountSettings.ResourceName +
-                        " nor the SDK default. Running on freshly constructed values. Create the " +
-                        "asset via Create > OnDi > Verify Account Settings and put it in a " +
-                        "Resources folder.");
-                    _settings = ScriptableObject.CreateInstance<VerifyAccountSettings>();
-                }
+                if (_settings == null) _settings = SettingsLocator.Load();
                 return _settings;
             }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        internal static void ResetStatics()
+        {
+            _settings = null;
+            _skipVisibleOverride = null;
+            _fontOverride = null;
+            _fontMaterialOverride = null;
+            OnSendOtp = null;
+            OnVerifyOtp = null;
+            OnSubmitProfile = null;
+            Verified = null;
+            Skipped = null;
+            Closed = null;
+            Playtime.ResetStatics();
+            PlaytimeTracker.ResetStatics();
         }
 
         public static bool IsVerified => PlayerPrefs.GetInt(PrefVerified, 0) == 1;
@@ -145,6 +147,8 @@ namespace OnDi.VerifyAccount
         public static class Playtime
         {
             public static event Action<TimeSpan> DailyLimitReached;
+
+            internal static void ResetStatics() => DailyLimitReached = null;
 
             public static void Start() => PlaytimeTracker.StartTracking();
 

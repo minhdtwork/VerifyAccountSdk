@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 796f41fcda7400a48b9caad61dabfdec, type: 3}
   m_Name: DefaultSettings
   m_EditorClassIdentifier: 
-  termsUrl: https://example.com/terms
-  privacyUrl: https://example.com/privacy
+  termsUrl: 
+  privacyUrl: 
   uiFont: {fileID: 0}
   uiFontMaterial: {fileID: 0}
   sortingLayerName: Default

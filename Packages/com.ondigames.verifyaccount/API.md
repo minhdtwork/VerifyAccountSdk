@@ -561,21 +561,35 @@ hiện dòng nhắc và nút "Hoàn thành" tắt cho tới khi gửi lại.
 ## 12. VerifyAccountSettings
 
 `ScriptableObject` tạo bằng **Create > OnDi > Verify Account Settings**, đặt ở một thư mục
-`Resources` bất kỳ, **giữ nguyên tên file `VerifyAccountSettings`**.
+`Resources` bất kỳ (thư mục con bên trong `Resources` cũng được), **giữ nguyên tên file
+`VerifyAccountSettings`**.
 
 SDK nạp theo đúng thứ tự này, lần đầu ai đó đọc `VerifyAccountSdk.Settings`:
 
-1. `Resources.Load("VerifyAccountSettings")` — file của game, nếu có.
-2. `Resources.Load("OnDiVerify/DefaultSettings")` — bản đóng gói sẵn trong package, để cài
-   xong là chạy được ngay.
-3. Không có cả hai thì `CreateInstance` giá trị khởi tạo của class, kèm một dòng log nhắc.
+1. `Resources.Load("VerifyAccountSettings")` — file của game nằm ngay gốc một thư mục
+   `Resources`.
+2. `Resources.LoadAll<VerifyAccountSettings>("")` — quét mọi thư mục `Resources` kể cả thư
+   mục con, lấy asset tên `VerifyAccountSettings` (bỏ qua bản mặc định của package). Có
+   nhiều hơn một thì lấy cái đầu tiên và log warning; asset đúng kiểu nhưng sai tên bị bỏ
+   qua và được nhắc tên trong warning.
+3. `Resources.Load("OnDiVerify/DefaultSettings")` — bản đóng gói sẵn trong package, để cài
+   xong là chạy được ngay. Rơi xuống bước này SDK log warning
+   `No VerifyAccountSettings asset found...` để biết game chưa có cấu hình riêng. Bản mặc
+   định để trống `termsUrl` và `privacyUrl`.
+4. Không có cả ba thì `CreateInstance` giá trị khởi tạo của class, kèm một dòng log nhắc.
 
-Hai bước đầu cố tình mang **hai tên khác nhau**: hai asset trùng tên nằm ở hai thư mục
-`Resources` thì `Resources.Load` trả về cái nào là không xác định, và bản của package sẽ có
-lúc đè mất cấu hình của game. Tên khác nhau nên file của game luôn thắng.
+Bản của package cố tình mang **tên khác** (`DefaultSettings`): hai asset trùng tên nằm ở hai
+thư mục `Resources` thì `Resources.Load` trả về cái nào là không xác định, và bản của package
+sẽ có lúc đè mất cấu hình của game. Tên khác nhau nên file của game luôn thắng.
+
+Trong Editor, import hoặc di chuyển một asset `VerifyAccountSettings` ra ngoài `Resources`,
+vào dưới thư mục `Editor`, hay đặt sai tên đều có warning ngay trong Console.
 
 Kết quả được nhớ lại (`static`), nên đổi file lúc chạy không có tác dụng — đổi từng trường
-trên `VerifyAccountSdk.Settings` thì được.
+trên `VerifyAccountSdk.Settings` thì được. Bật **Enter Play Mode Options** mà tắt Domain
+Reload cũng không sao: SDK tự xoá cache này cùng các hook, event và override lúc
+`SubsystemRegistration`, trước khi scene đầu tiên nạp, nên mỗi lần Play là một lần khởi
+động sạch.
 
 | Trường | Kiểu | Mặc định | Ý nghĩa |
 |---|---|---|---|
@@ -739,6 +753,14 @@ VerifyAccountSettings settings = VerifyAccountSdk.Settings;
 ---
 
 ## 17. Lỗi thường gặp
+
+**Bấm link "Điều khoản" / "Chính sách" không mở gì, hoặc mở nhầm trang dù đã điền URL**
+SDK đang chạy bằng bản mặc định của package chứ không phải file của game — Console lúc chạy
+có dòng `[VerifyAccount] No VerifyAccountSettings asset found...`. File
+`VerifyAccountSettings` phải nằm trong một thư mục `Resources` (thư mục con cũng được) và
+giữ đúng tên; Editor cũng warning ngay khi file nằm sai chỗ. Sửa xong mà vẫn vậy thì kiểm
+tra game đã cập nhật đúng phiên bản SDK chưa — cài qua git thì bấm **Update** trong Package
+Manager, cache cũ không tự đổi.
 
 **Bấm "Gửi OTP" thì hiện "Chức năng chưa sẵn sàng, vui lòng thử lại sau."**
 Chưa gán `VerifyAccountSdk.OnSendOtp`. Console có dòng warning chỉ đúng tên hook còn thiếu.
