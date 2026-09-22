@@ -74,6 +74,11 @@ namespace OnDi.VerifyAccount
         [Min(0f)] public float badgeFadeSeconds = 0.15f;
 
         [Header("Playtime Tracker")]
+        [Tooltip("Tự đếm ngay từ lúc game khởi động, không cần gọi VerifyAccountSdk.Playtime.Start(). " +
+                 "Đây là ngoại lệ duy nhất của quy tắc \"SDK không tự sinh gì\" — panel và badge vẫn " +
+                 "chỉ xuất hiện khi game gọi. Tắt đi nếu muốn tự chọn thời điểm bắt đầu đếm.")]
+        public bool autoStartPlaytime = true;
+
         [Tooltip("Tổng số phút chơi trong một ngày trước khi phát cảnh báo " +
                  "VerifyAccountSdk.Playtime.DailyLimitReached. 0 là tắt cảnh báo.")]
         [Min(0)] public int dailyPlayLimitMinutes = 180;

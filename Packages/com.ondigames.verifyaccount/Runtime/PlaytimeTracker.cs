@@ -13,6 +13,11 @@ namespace OnDi.VerifyAccount
     /// <para>Số giây nằm trong PlayerPrefs nên tắt game mở lại vẫn cộng tiếp trong cùng ngày.
     /// Thời gian app chạy nền không được tính: Update ngừng chạy nên không cộng thêm.</para>
     /// </summary>
+    /// <remarks>
+    /// Chỉ ghi PlayerPrefs ở những mốc có thật: vào nền, thoát game, tắt bộ đếm, sang ngày mới,
+    /// chạm mốc cảnh báo. Không ghi định kỳ. Đổi lại, app bị giết mà không kịp gọi
+    /// <c>OnApplicationPause</c> (thường chỉ xảy ra khi crash) thì mất phần chưa lưu của phiên đó.
+    /// </remarks>
     [DisallowMultipleComponent]
     internal sealed class PlaytimeTracker : MonoBehaviour
     {
@@ -23,9 +28,6 @@ namespace OnDi.VerifyAccount
         /// <summary>Chặn một frame kéo dài bất thường (loading, vừa resume) làm phồng bộ đếm.</summary>
         const float MaxFrameSeconds = 5f;
 
-        /// <summary>Ghi PlayerPrefs thưa ra để không đụng ổ đĩa mỗi frame.</summary>
-        const float SaveIntervalSeconds = 20f;
-
         static PlaytimeTracker _instance;
 
         static bool _loaded;
@@ -33,9 +35,21 @@ namespace OnDi.VerifyAccount
         static float _seconds;
         static bool _warned;
 
-        float _sinceSave;
-
         internal static bool IsRunning => _instance != null && _instance.isActiveAndEnabled;
+
+        /// <summary>
+        /// Tự bật bộ đếm lúc game khởi động nếu <see cref="VerifyAccountSettings.autoStartPlaytime"/>
+        /// bật. Ngoại lệ duy nhất của quy tắc "SDK không tự sinh gì": mốc cảnh báo phải tính từ lúc
+        /// mở game, chờ game gọi <see cref="StartTracking"/> thì phần thời gian trước đó mất trắng.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void AutoStart()
+        {
+            // Đọc thẳng Resources thay vì VerifyAccountSdk.Settings: project chưa cấu hình SDK thì
+            // im lặng bỏ qua, không bắn cảnh báo vào Console ngay lúc khởi động.
+            var settings = Resources.Load<VerifyAccountSettings>(VerifyAccountSettings.ResourceName);
+            if (settings != null && settings.autoStartPlaytime) StartTracking();
+        }
 
         /// <summary>Tổng thời gian đã chơi trong ngày hôm nay, đọc được cả khi chưa Start.</summary>
         internal static TimeSpan Today
@@ -75,8 +89,7 @@ namespace OnDi.VerifyAccount
         internal static void StopTracking()
         {
             if (_instance == null) return;
-            _instance.enabled = false;
-            Save();
+            _instance.enabled = false; // OnDisable chốt sổ luôn
         }
 
         /// <summary>Xoá bộ đếm của hôm nay, kể cả cờ đã cảnh báo.</summary>
@@ -95,15 +108,9 @@ namespace OnDi.VerifyAccount
         {
             if (RollOverIfNeeded()) Save();
 
-            var delta = Mathf.Min(Time.unscaledDeltaTime, MaxFrameSeconds);
-            _seconds += delta;
+            _seconds += Mathf.Min(Time.unscaledDeltaTime, MaxFrameSeconds);
 
             CheckLimit();
-
-            _sinceSave += delta;
-            if (_sinceSave < SaveIntervalSeconds) return;
-            _sinceSave = 0f;
-            Save();
         }
 
         void OnApplicationPause(bool paused)
