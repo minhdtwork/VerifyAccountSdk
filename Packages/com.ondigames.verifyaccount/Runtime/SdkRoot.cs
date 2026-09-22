@@ -6,10 +6,7 @@ using UnityEngine.UI;
 
 namespace OnDi.VerifyAccount
 {
-    /// <summary>
-    /// Canvas dùng chung của SDK. Được tạo lazy ở lần gọi API đầu tiên — không có
-    /// bootstrap tự động nào.
-    /// </summary>
+    /// <summary>Canvas dùng chung của SDK, dựng lazy ở lần gọi API đầu tiên.</summary>
     [DisallowMultipleComponent]
     internal sealed class SdkRoot : MonoBehaviour
     {
@@ -30,7 +27,7 @@ namespace OnDi.VerifyAccount
         /// <summary>Phát khi màn hình đổi kích thước hoặc đổi chiều.</summary>
         internal event Action ScreenChanged;
 
-        /// <summary>Instance hiện có, hoặc null. Dùng Unity-null nên an toàn với <c>?.</c>.</summary>
+        /// <summary>Unity-null đã quy về null thật nên <c>?.</c> dùng được.</summary>
         internal static SdkRoot Current => _instance != null ? _instance : null;
 
         internal static SdkRoot Ensure()
@@ -103,8 +100,6 @@ namespace OnDi.VerifyAccount
             ScreenChanged?.Invoke();
         }
 
-        // ---- Panel ----
-
         internal bool IsPanelOpen => _panel != null && _panel.gameObject.activeSelf;
 
         internal void ShowPanel()
@@ -131,8 +126,6 @@ namespace OnDi.VerifyAccount
         {
             if (_panel != null) _panel.ApplySkipButtonVisibility();
         }
-
-        // ---- Badge ----
 
         internal bool IsBadgeVisible => _badge != null && _badge.gameObject.activeSelf;
 
@@ -163,19 +156,12 @@ namespace OnDi.VerifyAccount
             if (_badge != null && _badge.gameObject.activeInHierarchy) _badge.ShowTooltip();
         }
 
-        // ---- Font ----
-
-        /// <summary>Đẩy font trong Settings xuống mọi chữ đang sống của SDK.</summary>
         internal void ApplyUiFont()
         {
             if (_panel != null) ApplyUiFont(_panel.gameObject);
             if (_badge != null) ApplyUiFont(_badge.gameObject);
         }
 
-        /// <summary>
-        /// Prefab đi kèm SDK dùng font mặc định của TextMeshPro; mỗi project cắm font riêng
-        /// bằng <see cref="VerifyAccountSettings.uiFont"/> và nó được dán vào đây.
-        /// </summary>
         static void ApplyUiFont(GameObject target)
         {
             var font = VerifyAccountSdk.UiFont;

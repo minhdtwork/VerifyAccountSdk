@@ -9,6 +9,8 @@ Plugin Unity để xác thực thông tin người chơi (họ tên, số điệ
 - **Không tự sinh gì cả**: không có GameObject nào tồn tại cho tới khi game gọi API.
 - Bộ đếm thời gian chơi trong ngày, vượt 180 phút thì bắn callback cảnh báo một lần.
 
+📖 **Tra cứu API đầy đủ: [API.md](API.md)**
+
 ---
 
 ## 1. Cài đặt
@@ -114,6 +116,9 @@ static async Task<SdkResult> SendOtpAsync(SendOtpRequest req)
 Còn dùng coroutine thuần? Bọc lại bằng `TaskCompletionSource<SdkResult>`.
 
 ## 5. API
+
+**Tài liệu tra cứu đầy đủ: [API.md](API.md)** — từng hook, từng sự kiện, từng trường trong
+Settings, kèm ví dụ và bảng lỗi thường gặp.
 
 | Thành viên | Mô tả |
 |---|---|

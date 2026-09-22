@@ -5,10 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace OnDi.VerifyAccount
 {
-    /// <summary>
-    /// Toàn bộ luật kiểm tra dữ liệu của form, tách riêng thành hàm thuần để test được
-    /// mà không cần dựng scene.
-    /// </summary>
+    /// <summary>Luật kiểm tra dữ liệu của form, tách thành hàm thuần để test không cần scene.</summary>
     public static class VerifyValidator
     {
         public const string DateFormat = "dd/MM/yyyy";

@@ -35,25 +35,14 @@ namespace OnDi.VerifyAccount
     }
 
     /// <summary>
-    /// Điểm vào duy nhất của SDK.
-    ///
-    /// <para>SDK không tự sinh gì cả — không có GameObject nào tồn tại cho tới lần gọi
-    /// <see cref="Show"/> hoặc <see cref="FloatButton.Show"/> đầu tiên.</para>
-    ///
-    /// <code>
-    /// VerifyAccountSdk.OnSendOtp       = req  => MyBackend.SendOtpAsync(req.PhoneNumber);
-    /// VerifyAccountSdk.OnVerifyOtp     = req  => MyBackend.VerifyOtpAsync(req.PhoneNumber, req.Otp);
-    /// VerifyAccountSdk.OnSubmitProfile = prof => MyBackend.SaveProfileAsync(prof);
-    /// VerifyAccountSdk.Verified       += prof => Debug.Log("xong " + prof.PhoneNumber);
-    /// VerifyAccountSdk.Show();
-    /// </code>
+    /// Điểm vào duy nhất của SDK. Không có GameObject nào tồn tại cho tới lần gọi
+    /// <see cref="Show"/> hoặc <see cref="FloatButton.Show"/> đầu tiên.
+    /// Hướng dẫn đầy đủ: API.md.
     /// </summary>
     public static class VerifyAccountSdk
     {
         const string PrefVerified = "OnDi.VerifyAccount.Verified";
         const string PrefVerifiedAt = "OnDi.VerifyAccount.VerifiedAt";
-
-        // ---- Hook: game cắm hàm gọi server của mình vào đây ----
 
         /// <summary>Gọi khi người chơi bấm "Gửi OTP" hoặc "Gửi lại".</summary>
         public static Func<SendOtpRequest, Task<SdkResult>> OnSendOtp;
@@ -64,8 +53,6 @@ namespace OnDi.VerifyAccount
         /// <summary>Gọi sau khi OTP đúng. Đây là chỗ game lưu thông tin lên server của mình.</summary>
         public static Func<VerifiedProfile, Task<SdkResult>> OnSubmitProfile;
 
-        // ---- Sự kiện ----
-
         /// <summary>Xác thực thành công trọn vẹn.</summary>
         public static event Action<VerifiedProfile> Verified;
 
@@ -74,8 +61,6 @@ namespace OnDi.VerifyAccount
 
         /// <summary>Panel đóng lại, vì bất kỳ lý do gì.</summary>
         public static event Action Closed;
-
-        // ---- Trạng thái ----
 
         static VerifyAccountSettings _settings;
         static bool? _skipVisibleOverride;
@@ -101,7 +86,6 @@ namespace OnDi.VerifyAccount
             }
         }
 
-        /// <summary>Đã xác thực xong trên thiết bị này hay chưa.</summary>
         public static bool IsVerified => PlayerPrefs.GetInt(PrefVerified, 0) == 1;
 
         /// <summary>Thời điểm xác thực (UTC). <c>default</c> nếu chưa xác thực.</summary>
@@ -124,8 +108,6 @@ namespace OnDi.VerifyAccount
             PlayerPrefs.Save();
         }
 
-        // ---- Điều khiển ----
-
         /// <summary>Mở form xác thực. Không làm gì nếu <see cref="IsVerified"/> đã true.</summary>
         public static void Show()
         {
@@ -139,7 +121,6 @@ namespace OnDi.VerifyAccount
         /// <summary>Đóng form. Không phát <see cref="Skipped"/>.</summary>
         public static void Hide() => SdkRoot.Current?.HidePanel();
 
-        /// <summary>Panel đang mở hay không.</summary>
         public static bool IsPanelOpen => SdkRoot.Current != null && SdkRoot.Current.IsPanelOpen;
 
         /// <summary>
@@ -155,9 +136,8 @@ namespace OnDi.VerifyAccount
         internal static bool SkipButtonVisible => _skipVisibleOverride ?? Settings.showSkipButton;
 
         /// <summary>
-        /// Đổi font TextMeshPro của toàn bộ chữ trong SDK lúc chạy, đè lên
-        /// <see cref="VerifyAccountSettings.uiFont"/>. Truyền <c>null</c> để quay lại font trong
-        /// Settings. Gọi lúc nào cũng được, kể cả khi form đang mở.
+        /// Đổi font của cả SDK lúc chạy, đè lên <see cref="VerifyAccountSettings.uiFont"/>.
+        /// <c>null</c> là quay lại font trong Settings.
         /// </summary>
         public static void SetUiFont(TMP_FontAsset font, Material fontMaterial = null)
         {
@@ -177,7 +157,6 @@ namespace OnDi.VerifyAccount
             /// <summary>Hiện badge. Lần gọi đầu mới sinh GameObject.</summary>
             public static void Show() => SdkRoot.Ensure().ShowBadge();
 
-            /// <summary>Ẩn badge.</summary>
             public static void Hide() => SdkRoot.Current?.HideBadge();
 
             /// <summary>Đưa badge về vị trí mặc định và xoá vị trí đã lưu.</summary>
@@ -187,45 +166,28 @@ namespace OnDi.VerifyAccount
         }
 
         /// <summary>
-        /// Bộ đếm thời gian chơi trong ngày. Cộng dồn thời gian thực người chơi ở trong game
-        /// (không tính lúc app chạy nền, không bị <c>Time.timeScale</c> ảnh hưởng), lưu vào
-        /// PlayerPrefs nên thoát game mở lại vẫn cộng tiếp trong cùng ngày.
-        ///
-        /// <para>Mặc định bộ đếm <b>tự chạy</b> ngay khi game khởi động, nên chỉ cần gắn callback:</para>
-        ///
-        /// <code>
-        /// VerifyAccountSdk.Playtime.DailyLimitReached += total =>
-        ///     MyUi.ShowWarning($"Bạn đã chơi {total.TotalMinutes:0} phút hôm nay.");
-        /// </code>
-        ///
-        /// <para>Tắt <see cref="VerifyAccountSettings.autoStartPlaytime"/> nếu muốn tự chọn thời
-        /// điểm bắt đầu bằng <see cref="Start"/>.</para>
+        /// Bộ đếm thời gian chơi trong ngày. Tự chạy từ lúc game khởi động trừ khi tắt
+        /// <see cref="VerifyAccountSettings.autoStartPlaytime"/>.
         /// </summary>
         public static class Playtime
         {
             /// <summary>
-            /// Tổng thời gian chơi trong ngày vượt <see cref="VerifyAccountSettings.dailyPlayLimitMinutes"/>
-            /// (mặc định 180 phút). Phát **đúng một lần mỗi ngày**; qua ngày mới bộ đếm về 0 và
-            /// cảnh báo được phát lại.
+            /// Vượt <see cref="VerifyAccountSettings.dailyPlayLimitMinutes"/>. Phát đúng một lần
+            /// mỗi ngày; qua ngày mới bộ đếm về 0 và cảnh báo được phát lại.
             /// </summary>
             public static event Action<TimeSpan> DailyLimitReached;
 
-            /// <summary>
-            /// Bắt đầu đếm. Không cần gọi nếu <see cref="VerifyAccountSettings.autoStartPlaytime"/>
-            /// đang bật. Gọi lại khi đang chạy cũng không sao.
-            /// </summary>
+            /// <summary>Bắt đầu đếm. Gọi lại khi đang chạy cũng không sao.</summary>
             public static void Start() => PlaytimeTracker.StartTracking();
 
             /// <summary>Tạm dừng đếm và chốt sổ xuống PlayerPrefs.</summary>
             public static void Stop() => PlaytimeTracker.StopTracking();
 
-            /// <summary>Đang đếm hay không.</summary>
             public static bool IsRunning => PlaytimeTracker.IsRunning;
 
             /// <summary>Tổng thời gian đã chơi hôm nay. Đọc được cả khi chưa <see cref="Start"/>.</summary>
             public static TimeSpan Today => PlaytimeTracker.Today;
 
-            /// <summary>Hôm nay đã phát cảnh báo hay chưa.</summary>
             public static bool LimitReachedToday => PlaytimeTracker.WarnedToday;
 
             /// <summary>Số phút còn lại trước khi chạm mốc. 0 nếu đã vượt hoặc mốc bị tắt.</summary>
@@ -259,8 +221,6 @@ namespace OnDi.VerifyAccount
                 }
             }
         }
-
-        // ---- Nội bộ: gọi hook an toàn ----
 
         internal static Task<SdkResult> InvokeSendOtp(SendOtpRequest request) =>
             Invoke(OnSendOtp, request, nameof(OnSendOtp));

@@ -5,13 +5,8 @@ using UnityEngine;
 namespace OnDi.VerifyAccount
 {
     /// <summary>
-    /// Cộng dồn thời gian thực người chơi ở trong game, theo từng ngày lịch của thiết bị.
-    /// Vượt mốc <see cref="VerifyAccountSettings.dailyPlayLimitMinutes"/> thì phát
-    /// <see cref="VerifyAccountSdk.Playtime.DailyLimitReached"/> đúng một lần, qua ngày mới
-    /// thì bộ đếm và cờ đã cảnh báo cùng về 0.
-    ///
-    /// <para>Số giây nằm trong PlayerPrefs nên tắt game mở lại vẫn cộng tiếp trong cùng ngày.
-    /// Thời gian app chạy nền không được tính: Update ngừng chạy nên không cộng thêm.</para>
+    /// Cộng dồn thời gian thực trong game theo từng ngày lịch của thiết bị. Số giây nằm trong
+    /// PlayerPrefs nên tắt game mở lại vẫn cộng tiếp trong cùng ngày.
     /// </summary>
     /// <remarks>
     /// Chỉ ghi PlayerPrefs ở những mốc có thật: vào nền, thoát game, tắt bộ đếm, sang ngày mới,
@@ -38,9 +33,8 @@ namespace OnDi.VerifyAccount
         internal static bool IsRunning => _instance != null && _instance.isActiveAndEnabled;
 
         /// <summary>
-        /// Tự bật bộ đếm lúc game khởi động nếu <see cref="VerifyAccountSettings.autoStartPlaytime"/>
-        /// bật. Ngoại lệ duy nhất của quy tắc "SDK không tự sinh gì": mốc cảnh báo phải tính từ lúc
-        /// mở game, chờ game gọi <see cref="StartTracking"/> thì phần thời gian trước đó mất trắng.
+        /// Ngoại lệ duy nhất của quy tắc "SDK không tự sinh gì": mốc cảnh báo phải tính từ lúc mở
+        /// game, chờ game gọi <see cref="StartTracking"/> thì phần thời gian trước đó mất trắng.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void AutoStart()
@@ -51,7 +45,6 @@ namespace OnDi.VerifyAccount
             if (settings != null && settings.autoStartPlaytime) StartTracking();
         }
 
-        /// <summary>Tổng thời gian đã chơi trong ngày hôm nay, đọc được cả khi chưa Start.</summary>
         internal static TimeSpan Today
         {
             get
@@ -92,7 +85,6 @@ namespace OnDi.VerifyAccount
             _instance.enabled = false; // OnDisable chốt sổ luôn
         }
 
-        /// <summary>Xoá bộ đếm của hôm nay, kể cả cờ đã cảnh báo.</summary>
         internal static void ResetToday()
         {
             EnsureLoaded();
@@ -101,8 +93,6 @@ namespace OnDi.VerifyAccount
             _warned = false;
             Save();
         }
-
-        // ---- Vòng đời ----
 
         void Update()
         {
@@ -123,8 +113,6 @@ namespace OnDi.VerifyAccount
         void OnApplicationQuit() => Save();
 
         void OnDisable() => Save();
-
-        // ---- Trạng thái ----
 
         static string TodayKey() => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 

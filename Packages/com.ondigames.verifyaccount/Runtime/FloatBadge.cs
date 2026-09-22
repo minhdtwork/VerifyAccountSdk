@@ -6,11 +6,9 @@ using UnityEngine.UI;
 namespace OnDi.VerifyAccount
 {
     /// <summary>
-    /// Badge 18+ nổi: neo vào viền trái hoặc phải, kéo thả được, chạm vào thì hiện bong bóng
-    /// cảnh báo. Vị trí lưu dưới dạng tỉ lệ nên xoay màn hay đổi thiết bị vẫn về đúng chỗ.
-    ///
-    /// <para>Lúc nằm yên badge mờ đi cho đỡ che game; đang hiện bong bóng hoặc đang bị kéo
-    /// thì rõ hoàn toàn.</para>
+    /// Badge 18+ neo vào viền trái hoặc phải, kéo thả được, chạm vào thì hiện bong bóng cảnh
+    /// báo. Vị trí lưu dưới dạng tỉ lệ nên xoay màn hay đổi thiết bị vẫn về đúng chỗ. Nằm yên
+    /// thì mờ đi cho đỡ che game.
     /// </summary>
     [DisallowMultipleComponent]
     internal sealed class FloatBadge : MonoBehaviour,
@@ -99,8 +97,6 @@ namespace OnDi.VerifyAccount
             ApplySavedPosition();
         }
 
-        // ---- Kéo thả ----
-
         public void OnBeginDrag(PointerEventData eventData)
         {
             _dragging = true;
@@ -154,8 +150,6 @@ namespace OnDi.VerifyAccount
             else ShowTooltip();
         }
 
-        // ---- Vị trí ----
-
         void ApplySavedPosition()
         {
             _canvasRect = transform.parent as RectTransform;
@@ -206,9 +200,6 @@ namespace OnDi.VerifyAccount
         }
 #endif
 
-        // ---- Bong bóng ----
-
-        /// <summary>Bật bong bóng từ ngoài — bộ đếm thời gian chơi dùng lối này.</summary>
         internal void ShowTooltip()
         {
             if (tooltip == null) return;
@@ -226,9 +217,6 @@ namespace OnDi.VerifyAccount
             _hideTooltipAt = 0f;
         }
 
-        // ---- Độ mờ ----
-
-        /// <summary>Rõ hoàn toàn khi đang hiện bong bóng hoặc đang bị kéo, còn lại thì mờ.</summary>
         float TargetAlpha
         {
             get
