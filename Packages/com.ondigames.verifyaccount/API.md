@@ -399,6 +399,11 @@ VerifyAccountSdk.FloatButton.Hide();
 
 Đổi icon bằng `badgeSprite` trong Settings, đổi chữ trong bong bóng bằng `badgeTooltipText`.
 
+Bong bóng chia hai cột: cột "18+" cố định nằm trong prefab, cột chữ bên phải lấy từ
+`badgeTooltipText`. Chuỗi mặc định có sẵn ký tự xuống dòng để ngắt đúng bốn dòng như bản
+thiết kế — tự đặt chuỗi khác thì tự chọn chỗ xuống dòng, bong bóng cao theo số dòng. Hằng
+`VerifyAccountSettings.DefaultBadgeTooltipText` giữ nguyên chuỗi mặc định đó.
+
 ---
 
 ## 8. Bộ đếm thời gian chơi
@@ -562,7 +567,7 @@ chạy bằng giá trị mặc định và log một dòng nhắc.
 | `resendCooldownSeconds` | `int` | `60` | Khoá nút "Gửi lại" bao nhiêu giây sau mỗi lần gửi |
 | `showSkipButton` | `bool` | `true` | Hiện nút "Bỏ qua". Đè lúc chạy bằng `SetSkipButtonVisible()` |
 | `badgeSprite` | `Sprite` | `null` | Icon badge. Trống là dùng icon trong prefab |
-| `badgeTooltipText` | `string` | "Chơi quá 180 phút…" | Chữ trong bong bóng của badge |
+| `badgeTooltipText` | `string` | `DefaultBadgeTooltipText` | Chữ trong bong bóng của badge, có sẵn ký tự xuống dòng |
 | `tooltipAutoHideSeconds` | `float` | `4` | Tự tắt bong bóng sau bao lâu. `0` là không tự tắt |
 | `badgeIdleAlpha` | `float` | `0.55` | Độ mờ của badge lúc nằm yên. `1` là rõ hoàn toàn |
 | `badgeFadeSeconds` | `float` | `0.15` | Thời gian chuyển giữa mờ và rõ. `0` là đổi tức thì |
