@@ -2,14 +2,6 @@ using System.Threading.Tasks;
 using OnDi.VerifyAccount;
 using UnityEngine;
 
-/// <summary>
-/// Demo tích hợp SDK với một "server" giả.
-/// Đặt script này lên một GameObject rỗng rồi bấm Play.
-///
-/// Quy ước của server giả:
-///  - số bắt đầu bằng 0999 thì gửi OTP thất bại, để thử đường lỗi
-///  - mã OTP đúng là 123456
-/// </summary>
 public sealed class DemoBootstrap : MonoBehaviour
 {
     const string ValidOtp = "123456";
@@ -28,10 +20,8 @@ public sealed class DemoBootstrap : MonoBehaviour
         VerifyAccountSdk.Skipped += () => SetLog("Người chơi bấm Bỏ qua.");
         VerifyAccountSdk.Closed += () => SetLog("Panel đã đóng.");
 
-        // Cảnh báo chơi quá lâu: phát đúng một lần mỗi ngày.
         VerifyAccountSdk.Playtime.DailyLimitReached += total =>
             SetLog("Đã chơi " + (int)total.TotalMinutes + " phút hôm nay — cảnh báo sức khỏe.");
-        // Không gọi Playtime.Start(): autoStartPlaytime trong Settings lo việc đó.
     }
 
     static async Task<SdkResult> FakeSendOtp(SendOtpRequest request)
@@ -40,7 +30,7 @@ public sealed class DemoBootstrap : MonoBehaviour
         if (request.PhoneNumber.StartsWith("0999"))
             return SdkResult.Fail("Số điện thoại này đang bị chặn.");
 
-        Debug.Log("[Demo] OTP cho " + request.PhoneNumber + " là " + ValidOtp);
+        Debug.Log("[Demo] OTP for " + request.PhoneNumber + " is " + ValidOtp);
         return SdkResult.Success();
     }
 
@@ -55,7 +45,7 @@ public sealed class DemoBootstrap : MonoBehaviour
     static async Task<SdkResult> FakeSubmitProfile(VerifiedProfile profile)
     {
         await Task.Delay(500);
-        Debug.Log("[Demo] Đã gửi hồ sơ lên server: " + JsonUtility.ToJson(profile));
+        Debug.Log("[Demo] Profile submitted to the server: " + JsonUtility.ToJson(profile));
         return SdkResult.Success();
     }
 
@@ -65,7 +55,6 @@ public sealed class DemoBootstrap : MonoBehaviour
         Debug.Log("[Demo] " + message);
     }
 
-    // OnGUI cho nhanh — đây là bảng điều khiển của demo, không phải UI của SDK.
     void OnGUI()
     {
         var scale = Screen.height / 1280f;

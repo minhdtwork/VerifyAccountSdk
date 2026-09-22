@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 namespace OnDi.VerifyAccount
 {
-    /// <summary>Canvas dùng chung của SDK, dựng lazy ở lần gọi API đầu tiên.</summary>
     [DisallowMultipleComponent]
     internal sealed class SdkRoot : MonoBehaviour
     {
@@ -24,10 +23,8 @@ namespace OnDi.VerifyAccount
         int _lastWidth;
         int _lastHeight;
 
-        /// <summary>Phát khi màn hình đổi kích thước hoặc đổi chiều.</summary>
         internal event Action ScreenChanged;
 
-        /// <summary>Unity-null đã quy về null thật nên <c>?.</c> dùng được.</summary>
         internal static SdkRoot Current => _instance != null ? _instance : null;
 
         internal static SdkRoot Ensure()
@@ -64,7 +61,6 @@ namespace OnDi.VerifyAccount
             ApplyScreen();
         }
 
-        /// <summary>Game nào cũng nên có sẵn EventSystem; nếu không thì SDK tự dựng một cái.</summary>
         static void EnsureEventSystem()
         {
             if (EventSystem.current != null) return;
@@ -75,8 +71,8 @@ namespace OnDi.VerifyAccount
 #if !ENABLE_INPUT_SYSTEM || ENABLE_LEGACY_INPUT_MANAGER
             go.AddComponent<StandaloneInputModule>();
 #else
-            Debug.LogWarning("[VerifyAccount] Scene không có EventSystem và project đang dùng " +
-                             "Input System mới. Hãy thêm EventSystem với InputSystemUIInputModule.");
+            Debug.LogWarning("[VerifyAccount] The scene has no EventSystem and the project uses the new " +
+                             "Input System. Add an EventSystem with InputSystemUIInputModule.");
 #endif
         }
 
@@ -91,8 +87,6 @@ namespace OnDi.VerifyAccount
             _lastWidth = Screen.width;
             _lastHeight = Screen.height;
 
-            // Màn ngang khớp theo chiều cao, màn dọc khớp theo chiều rộng, để tỉ lệ pixel
-            // của UI giữ nguyên ở cả hai chiều thay vì co lại còn một nửa.
             var landscape = Screen.width > Screen.height;
             _scaler.referenceResolution = landscape ? LandscapeReference : PortraitReference;
             _scaler.matchWidthOrHeight = landscape ? 1f : 0f;
@@ -110,7 +104,7 @@ namespace OnDi.VerifyAccount
                 if (_panel == null) return;
             }
 
-            _panel.transform.SetAsFirstSibling(); // badge luôn nằm trên panel
+            _panel.transform.SetAsFirstSibling();
             _panel.gameObject.SetActive(true);
             _panel.Open();
         }
@@ -181,8 +175,8 @@ namespace OnDi.VerifyAccount
             var prefab = Resources.Load<GameObject>(resourcePath);
             if (prefab == null)
             {
-                Debug.LogError("[VerifyAccount] Không nạp được prefab Resources/" + resourcePath +
-                               ". Chạy menu Tools > OnDi Verify > Rebuild UI Prefabs để dựng lại.");
+                Debug.LogError("[VerifyAccount] Could not load prefab Resources/" + resourcePath +
+                               ". Run Tools > OnDi Verify > Rebuild UI Prefabs to recreate it.");
                 return null;
             }
 
@@ -193,7 +187,7 @@ namespace OnDi.VerifyAccount
             var component = instance.GetComponent<T>();
             if (component == null)
             {
-                Debug.LogError("[VerifyAccount] Prefab " + resourcePath + " thiếu component " + typeof(T).Name + ".");
+                Debug.LogError("[VerifyAccount] Prefab " + resourcePath + " is missing component " + typeof(T).Name + ".");
                 Destroy(instance);
             }
             return component;

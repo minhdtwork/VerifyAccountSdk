@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 namespace OnDi.VerifyAccount
 {
-    /// <summary>Logic của form xác thực. Các tham chiếu UI do prefab gán sẵn.</summary>
     [DisallowMultipleComponent]
     internal sealed class VerifyPanel : MonoBehaviour
     {
@@ -103,11 +102,6 @@ namespace OnDi.VerifyAccount
             _scrollToTopIn = 2;
         }
 
-        /// <summary>
-        /// Mỗi lần mở lại phải về đầu form, nhưng chỉ sau khi PanelAutoHeight và layout group
-        /// đã chốt kích thước. Thứ tự LateUpdate giữa các component không đảm bảo nên đợi hẳn
-        /// vài frame thay vì đặt ngay trong <see cref="Open"/>.
-        /// </summary>
         void LateUpdate()
         {
             if (_scrollToTopIn <= 0) return;
@@ -156,12 +150,6 @@ namespace OnDi.VerifyAccount
                 _maskingDate = true;
                 dobInput.text = masked;
 
-                // Phải là stringPosition chứ không phải caretPosition. caretPosition đếm theo
-                // ký tự đã dựng hình và bị kẹp vào `characterCount - 1` của textInfo — mà lúc này
-                // textInfo vẫn là của chuỗi cũ, ngắn hơn một ký tự. Kết quả: con trỏ tụt về trước
-                // ký tự vừa gõ, đúng lúc mask chèn thêm dấu "/" (tức từ phần tháng trở đi).
-                // stringPosition kẹp theo text.Length nên không dính, TMP tự quy ra chỗ con trỏ
-                // sau khi label cập nhật xong.
                 dobInput.stringPosition = masked.Length;
                 _maskingDate = false;
             }
@@ -170,10 +158,6 @@ namespace OnDi.VerifyAccount
             Refresh();
         }
 
-        /// <summary>
-        /// Báo lỗi ngay khi gõ đủ <c>dd/mm/yyyy</c> thay vì đợi tới lúc bấm "Hoàn thành".
-        /// Gõ dở thì im lặng — không ai muốn bị mắng lúc mới bấm được hai chữ số.
-        /// </summary>
         void ValidateDobLive() =>
             Show(dobError, VerifyValidator.DescribeBirthDateProblem(dobInput.text, _settings.minAge));
 
@@ -202,11 +186,6 @@ namespace OnDi.VerifyAccount
                 submitImage.sprite = can ? submitEnabledSprite : submitDisabledSprite;
         }
 
-        /// <summary>
-        /// Ẩn cả hàng chứ không chỉ ẩn nút. Nút nằm trong một hàng riêng để canh trái được, mà
-        /// hàng mới là mục của layout group — ẩn mỗi nút thì hàng vẫn giữ nguyên chiều cao và
-        /// form thủng một mảng trống.
-        /// </summary>
         static void SetRowVisible(Component inRow, bool visible)
         {
             var parent = inRow.transform.parent;
@@ -230,7 +209,7 @@ namespace OnDi.VerifyAccount
                 PhoneNumber = phoneInput.text.Trim(),
             });
 
-            if (this == null) return; // panel bị huỷ trong lúc chờ mạng
+            if (this == null) return;
             SetBusy(false);
 
             if (!result.Ok)
@@ -327,8 +306,8 @@ namespace OnDi.VerifyAccount
         {
             if (string.IsNullOrWhiteSpace(url))
             {
-                Debug.LogWarning("[VerifyAccount] Chưa cấu hình link cho \"" + label +
-                                 "\" trong VerifyAccountSettings.");
+                Debug.LogWarning("[VerifyAccount] No URL configured for \"" + label +
+                                 "\" in VerifyAccountSettings.");
                 return;
             }
             Application.OpenURL(url);

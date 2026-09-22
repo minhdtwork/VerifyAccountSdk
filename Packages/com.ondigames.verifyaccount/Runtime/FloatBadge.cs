@@ -5,11 +5,6 @@ using UnityEngine.UI;
 
 namespace OnDi.VerifyAccount
 {
-    /// <summary>
-    /// Badge 18+ neo vào viền trái hoặc phải, kéo thả được, chạm vào thì hiện bong bóng cảnh
-    /// báo. Vị trí lưu dưới dạng tỉ lệ nên xoay màn hay đổi thiết bị vẫn về đúng chỗ. Nằm yên
-    /// thì mờ đi cho đỡ che game.
-    /// </summary>
     [DisallowMultipleComponent]
     internal sealed class FloatBadge : MonoBehaviour,
         IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerClickHandler
@@ -81,8 +76,7 @@ namespace OnDi.VerifyAccount
             }
 
 #if ENABLE_LEGACY_INPUT_MANAGER
-            // Chạm ra ngoài bong bóng thì tắt. Project chỉ bật Input System mới thì bỏ qua,
-            // bong bóng vẫn tự tắt theo tooltipAutoHideSeconds.
+
             if (Input.GetMouseButtonDown(0) && !IsPointerOverSelf(Input.mousePosition))
                 HideTooltip();
 #endif
@@ -140,9 +134,6 @@ namespace OnDi.VerifyAccount
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            // EventSystem vẫn bắn pointerClick ở cuối một lần kéo: nó chỉ xoá eligibleForClick
-            // khi chỗ nhận press khác chỗ nhận drag, mà badge thì nhận cả hai. Sự kiện này lại
-            // đến trước OnEndDrag nên không tin được _dragging — phải nhớ theo từng lần nhấn.
             if (_draggedThisPress) return;
 
             if (tooltip == null) return;
@@ -163,7 +154,6 @@ namespace OnDi.VerifyAccount
             if (tooltip != null && tooltip.gameObject.activeSelf) LayoutTooltip();
         }
 
-        /// <summary>Giới hạn tâm badge, tính theo safe area và quy về toạ độ canvas.</summary>
         void GetBounds(out float minX, out float maxX, out float minY, out float maxY)
         {
             var canvasW = _canvasRect.rect.width;
@@ -248,7 +238,6 @@ namespace OnDi.VerifyAccount
                 canvasGroup.alpha, target, Time.unscaledDeltaTime / seconds);
         }
 
-        /// <summary>Đặt bong bóng sang phía đối diện viền mà badge đang bám, rồi kẹp vào màn hình.</summary>
         void LayoutTooltip()
         {
             LayoutRebuilder.ForceRebuildLayoutImmediate(tooltip);
@@ -258,7 +247,6 @@ namespace OnDi.VerifyAccount
 
             if (tooltipTail != null)
             {
-                // Đuôi nằm ở cạnh hướng về badge; sprite vẽ sẵn trỏ sang trái nên lật khi cần.
                 var anchor = new Vector2(_onRight ? 1f : 0f, 0.5f);
                 tooltipTail.anchorMin = anchor;
                 tooltipTail.anchorMax = anchor;
@@ -267,7 +255,6 @@ namespace OnDi.VerifyAccount
                 tooltipTail.localScale = new Vector3(_onRight ? -1f : 1f, 1f, 1f);
             }
 
-            // Kẹp theo chiều dọc để bong bóng không lọt ra ngoài canvas.
             var canvasH = _canvasRect.rect.height;
             var halfBubble = tooltip.rect.height * 0.5f;
             var badgeY = _rect.anchoredPosition.y;

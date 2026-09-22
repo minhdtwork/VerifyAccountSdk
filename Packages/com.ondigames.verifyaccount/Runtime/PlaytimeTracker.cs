@@ -4,15 +4,6 @@ using UnityEngine;
 
 namespace OnDi.VerifyAccount
 {
-    /// <summary>
-    /// Cộng dồn thời gian thực trong game theo từng ngày lịch của thiết bị. Số giây nằm trong
-    /// PlayerPrefs nên tắt game mở lại vẫn cộng tiếp trong cùng ngày.
-    /// </summary>
-    /// <remarks>
-    /// Chỉ ghi PlayerPrefs ở những mốc có thật: vào nền, thoát game, tắt bộ đếm, sang ngày mới,
-    /// chạm mốc cảnh báo. Không ghi định kỳ. Đổi lại, app bị giết mà không kịp gọi
-    /// <c>OnApplicationPause</c> (thường chỉ xảy ra khi crash) thì mất phần chưa lưu của phiên đó.
-    /// </remarks>
     [DisallowMultipleComponent]
     internal sealed class PlaytimeTracker : MonoBehaviour
     {
@@ -20,7 +11,6 @@ namespace OnDi.VerifyAccount
         const string PrefSeconds = "OnDi.VerifyAccount.Playtime.Seconds";
         const string PrefWarned = "OnDi.VerifyAccount.Playtime.Warned";
 
-        /// <summary>Chặn một frame kéo dài bất thường (loading, vừa resume) làm phồng bộ đếm.</summary>
         const float MaxFrameSeconds = 5f;
 
         static PlaytimeTracker _instance;
@@ -32,15 +22,9 @@ namespace OnDi.VerifyAccount
 
         internal static bool IsRunning => _instance != null && _instance.isActiveAndEnabled;
 
-        /// <summary>
-        /// Ngoại lệ duy nhất của quy tắc "SDK không tự sinh gì": mốc cảnh báo phải tính từ lúc mở
-        /// game, chờ game gọi <see cref="StartTracking"/> thì phần thời gian trước đó mất trắng.
-        /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void AutoStart()
         {
-            // Đọc thẳng Resources thay vì VerifyAccountSdk.Settings: project chưa cấu hình SDK thì
-            // im lặng bỏ qua, không bắn cảnh báo vào Console ngay lúc khởi động.
             var settings = Resources.Load<VerifyAccountSettings>(VerifyAccountSettings.ResourceName);
             if (settings != null && settings.autoStartPlaytime) StartTracking();
         }
@@ -82,7 +66,7 @@ namespace OnDi.VerifyAccount
         internal static void StopTracking()
         {
             if (_instance == null) return;
-            _instance.enabled = false; // OnDisable chốt sổ luôn
+            _instance.enabled = false;
         }
 
         internal static void ResetToday()
@@ -105,7 +89,6 @@ namespace OnDi.VerifyAccount
 
         void OnApplicationPause(bool paused)
         {
-            // Vào nền: chốt sổ. Ra khỏi nền: có thể đã sang ngày mới.
             if (paused) Save();
             else if (RollOverIfNeeded()) Save();
         }
@@ -128,7 +111,6 @@ namespace OnDi.VerifyAccount
             if (RollOverIfNeeded()) Save();
         }
 
-        /// <summary>Sang ngày mới thì bộ đếm về 0. Trả về true nếu vừa đổi ngày.</summary>
         static bool RollOverIfNeeded()
         {
             var today = TodayKey();

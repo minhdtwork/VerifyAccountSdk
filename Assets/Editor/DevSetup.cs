@@ -4,11 +4,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-/// <summary>
-/// Thiết lập cho chính project phát triển SDK này: dựng prefab, tạo file cấu hình mẫu và
-/// scene demo. Không phải một phần của package.
-/// Chạy bằng menu hoặc <c>Unity -batchmode -executeMethod DevSetup.Run</c>.
-/// </summary>
 public static class DevSetup
 {
     const string SettingsPath = "Assets/Resources/VerifyAccountSettings.asset";
@@ -22,7 +17,7 @@ public static class DevSetup
         CreateDemoScene();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("[DevSetup] Xong.");
+        Debug.Log("[DevSetup] Done.");
     }
 
     static void CreateSettings()
@@ -33,7 +28,7 @@ public static class DevSetup
         settings.termsUrl = "https://example.com/terms";
         settings.privacyUrl = "https://example.com/privacy";
         AssetDatabase.CreateAsset(settings, SettingsPath);
-        Debug.Log("[DevSetup] Đã tạo " + SettingsPath);
+        Debug.Log("[DevSetup] Created " + SettingsPath);
     }
 
     static void CreateDemoScene()
@@ -43,6 +38,6 @@ public static class DevSetup
         go.AddComponent<DemoBootstrap>();
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, DemoScenePath);
-        Debug.Log("[DevSetup] Đã tạo " + DemoScenePath);
+        Debug.Log("[DevSetup] Created " + DemoScenePath);
     }
 }

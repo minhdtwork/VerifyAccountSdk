@@ -6,23 +6,12 @@ using UnityEngine.UI;
 
 namespace OnDi.VerifyAccount.Editor
 {
-    /// <summary>
-    /// Dựng lại hai prefab UI từ đầu. Chạy một lần để sinh asset; sau đó prefab là nguồn
-    /// sự thật và designer sửa trực tiếp trong Inspector.
-    ///
-    /// ponytail: builder và prefab trùng thông tin. Nếu hai bên lệch nhau thì bỏ builder đi,
-    /// đừng cố đồng bộ ngược.
-    ///
-    /// Toàn bộ chữ là TextMeshPro và cố tình **không gán font** — prefab dùng font mặc định
-    /// của TMP, mỗi project cắm font riêng qua <see cref="VerifyAccountSettings.uiFont"/>.
-    /// </summary>
     public static class UiPrefabBuilder
     {
         const string PackageRoot = "Packages/com.ondigames.verifyaccount";
         const string ResourcesDir = PackageRoot + "/Runtime/Resources/OnDiVerify";
         const string SpritesDir = ResourcesDir + "/Sprites";
 
-        // Bảng màu lấy từ ảnh demo.
         static readonly Color Backdrop = new Color(0f, 0f, 0f, 0.55f);
         static readonly Color PanelTint = Color.white;
         static readonly Color FieldBg = new Color32(0xEC, 0xEC, 0xEC, 0xFF);
@@ -40,24 +29,22 @@ namespace OnDi.VerifyAccount.Editor
         const float ScrollTopInset = 130f;
         const float ScrollBottomInset = 40f;
         const float ScrollbarWidth = 16f;
-        const float ScrollbarInset = 10f;   // cách mép phải panel
-        const float ScrollbarVInset = 8f;   // tránh góc bo của khung
+        const float ScrollbarInset = 10f;
+        const float ScrollbarVInset = 8f;
 
-        // Bong bóng badge: cột "18+" bên trái, gạch dọc, rồi chữ cảnh báo.
         const float TooltipWidth = 560f;
-        const float TooltipFrame = 19f;     // lề trắng + viền đen vẽ sẵn trong bubble.png
+        const float TooltipFrame = 19f;
         const float TooltipMarkWidth = 150f;
         const float TooltipDividerX = TooltipFrame + TooltipMarkWidth;
-        const float TooltipTextInset = 12f; // chữ cách gạch dọc
+        const float TooltipTextInset = 12f;
         const float TooltipTailWidth = 64f;
         const float TooltipTailHeight = 44f;
 
-        // Đoạn dẫn theo yêu cầu pháp lý, nằm ngay dưới tiêu đề form.
         const string IntroText =
             "Theo Nghị Định 147/2024/NĐ-CP, người chơi phải cung cấp thông tin dưới đây và " +
             "thực hiện xác minh số điện thoại để có thể tiếp tục sử dụng dịch vụ.";
-        const float LabelTopGap = 10f;  // khoảng trống trên nhãn, để nhãn dính vào ô của nó
-        const float CharacterSpacing = -6f;  // giãn cách chữ, dùng chung cho mọi chữ của SDK
+        const float LabelTopGap = 10f;
+        const float CharacterSpacing = -6f;
 
         const float FontTitle = 40f;
         const float FontBody = 31f;
@@ -77,20 +64,15 @@ namespace OnDi.VerifyAccount.Editor
             BuildBadgePrefab();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[VerifyAccount] Đã dựng lại prefab vào " + ResourcesDir);
+            Debug.Log("[VerifyAccount] Rebuilt the prefabs into " + ResourcesDir);
         }
 
-        /// <summary>
-        /// Không có TMP Essential Resources thì TextMeshPro không có font mặc định và prefab
-        /// dựng ra sẽ trống trơn. Import luôn hộ, đằng nào project cũng cần — nhưng
-        /// <c>ImportPackage</c> chạy bất đồng bộ nên phải đợi nó xong rồi mới dựng lại.
-        /// </summary>
         static bool EnsureTmpResources()
         {
             if (Resources.Load<TMP_Settings>("TMP Settings") != null) return true;
 
-            Debug.Log("[VerifyAccount] Chưa có TMP Essential Resources — import xong sẽ tự dựng " +
-                      "lại prefab.");
+            Debug.Log("[VerifyAccount] TMP Essential Resources missing - the prefabs will be rebuilt " +
+                      "once the import finishes.");
             AssetDatabase.importPackageCompleted += OnTmpImportCompleted;
             AssetDatabase.importPackageFailed += OnTmpImportFailed;
             TMP_PackageResourceImporter.ImportResources(true, false, false);
@@ -106,8 +88,8 @@ namespace OnDi.VerifyAccount.Editor
         static void OnTmpImportFailed(string packageName, string error)
         {
             UnsubscribeTmpImport();
-            Debug.LogError("[VerifyAccount] Import TMP Essential Resources thất bại (" + error +
-                           "). Vào Window > TextMeshPro > Import TMP Essential Resources rồi chạy lại.");
+            Debug.LogError("[VerifyAccount] Importing TMP Essential Resources failed (" + error +
+                           "). Use Window > TextMeshPro > Import TMP Essential Resources, then retry.");
         }
 
         static void UnsubscribeTmpImport()
@@ -116,11 +98,8 @@ namespace OnDi.VerifyAccount.Editor
             AssetDatabase.importPackageFailed -= OnTmpImportFailed;
         }
 
-        // ---- Import settings cho sprite ----
-
         static void ApplySpriteImportSettings()
         {
-            // border 9-slice đo từ bán kính bo góc của từng ảnh
             Configure("BG.png", new Vector4(24, 24, 24, 24));
             Configure("btn_cam.png", new Vector4(10, 10, 10, 10));
             Configure("btn_xam.png", new Vector4(10, 10, 10, 10));
@@ -138,7 +117,7 @@ namespace OnDi.VerifyAccount.Editor
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null)
             {
-                Debug.LogWarning("[VerifyAccount] Thiếu sprite " + path);
+                Debug.LogWarning("[VerifyAccount] Missing sprite " + path);
                 return;
             }
 
@@ -157,15 +136,13 @@ namespace OnDi.VerifyAccount.Editor
         static Sprite Sprite(string fileName) =>
             AssetDatabase.LoadAssetAtPath<Sprite>(SpritesDir + "/" + fileName);
 
-        // ---- Panel ----
-
         static void BuildPanelPrefab()
         {
             var root = NewUi("VerifyPanel", null);
             Stretch(root);
             var backdrop = root.gameObject.AddComponent<Image>();
             backdrop.color = Backdrop;
-            backdrop.raycastTarget = true; // chặn click xuống UI của game bên dưới
+            backdrop.raycastTarget = true;
 
             var panel = NewUi("Panel", root);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(0.5f, 0.5f);
@@ -175,7 +152,6 @@ namespace OnDi.VerifyAccount.Editor
             panelImage.type = Image.Type.Sliced;
             panelImage.color = PanelTint;
 
-            // "Bỏ qua" nằm ngoài vùng cuộn để luôn nhìn thấy
             var skip = NewButton("BtnSkip", panel, "round_white.png", "Bỏ qua", TextDark, FontBody);
             var skipRect = (RectTransform)skip.transform;
             skipRect.anchorMin = skipRect.anchorMax = skipRect.pivot = new Vector2(1f, 1f);
@@ -191,10 +167,10 @@ namespace OnDi.VerifyAccount.Editor
 
             var viewport = NewUi("Viewport", scroll);
             Stretch(viewport);
-            // Thanh cuộn ăn bớt bề ngang viewport từ mép phải, nên pivot phải nằm ở mép trái.
+
             viewport.pivot = new Vector2(0f, 1f);
             viewport.gameObject.AddComponent<RectMask2D>();
-            // Ảnh trong suốt để kéo vào chỗ trống trong form cũng cuộn được.
+
             AddDragCatcher(viewport);
             scrollRect.viewport = viewport;
 
@@ -221,10 +197,9 @@ namespace OnDi.VerifyAccount.Editor
 
             var autoHeight = panel.gameObject.AddComponent<PanelAutoHeight>();
 
-            // --- nội dung form, đúng thứ tự trong demo ---
             NewLabel("Title", content, "Xác thực thông tin", TextDark, FontTitle,
                      TextAlignmentOptions.Center, bold: true, height: 62f);
-            // Đoạn dẫn xuống dòng theo bề ngang form nên để cao tự do, đừng chốt chiều cao.
+
             NewLabel("Subtitle", content, IntroText, TextBody, FontBody,
                      TextAlignmentOptions.Left, bold: true, height: 0f);
 
@@ -259,7 +234,6 @@ namespace OnDi.VerifyAccount.Editor
                                      TextAlignmentOptions.Left, bold: true, height: 48f);
             var otpError = NewError("OtpError", content);
 
-            // hàng tiêu đề nhóm điều khoản + mũi tên gập
             var agreeHeader = NewRow("RowAgreeHeader", content, 0f);
             var agreeHlg = agreeHeader.gameObject.GetComponent<HorizontalLayoutGroup>();
             agreeHlg.childForceExpandWidth = false;
@@ -307,11 +281,6 @@ namespace OnDi.VerifyAccount.Editor
             SavePrefab(root.gameObject, ResourcesDir + "/VerifyPanel.prefab");
         }
 
-        /// <summary>
-        /// Thanh cuộn dọc bám mép phải vùng cuộn. <c>AutoHideAndExpandViewport</c> nên nội dung
-        /// vừa khung thì thanh biến mất hẳn và form rộng lại như cũ; chỉ khi UI bị co — màn ngang,
-        /// máy màn ngắn, chữ xuống dòng nhiều — thanh mới hiện ra.
-        /// </summary>
         static void BuildVerticalScrollbar(RectTransform scroll, ScrollRect scrollRect)
         {
             var bar = NewUi("ScrollbarV", scroll);
@@ -324,7 +293,7 @@ namespace OnDi.VerifyAccount.Editor
             var track = bar.gameObject.AddComponent<Image>();
             track.sprite = Sprite("round_white.png");
             track.type = Image.Type.Sliced;
-            // Bo góc của round_white là 16px, rộng hơn cả thanh — thu nhỏ border lại cho vừa.
+
             track.pixelsPerUnitMultiplier = 4f;
             track.color = ScrollTrack;
 
@@ -349,12 +318,10 @@ namespace OnDi.VerifyAccount.Editor
 
             scrollRect.verticalScrollbar = scrollbar;
             scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
-            // Viewport hẹp lại đúng bằng bề ngang thanh cộng khoảng cách tới mép, nên mép
-            // phải của nội dung dừng ngay sát mép trái thanh cuộn, không chồng lên nhau.
+
             scrollRect.verticalScrollbarSpacing = ScrollbarInset;
         }
 
-        /// <summary>Graphic trong suốt: ScrollRect cần một thứ nhận raycast thì mới kéo được.</summary>
         static void AddDragCatcher(RectTransform target)
         {
             var image = target.gameObject.AddComponent<Image>();
@@ -448,8 +415,6 @@ namespace OnDi.VerifyAccount.Editor
             linkButton.transition = Selectable.Transition.None;
         }
 
-        // ---- Badge ----
-
         static void BuildBadgePrefab()
         {
             var root = NewUi("FloatBadge", null);
@@ -460,7 +425,6 @@ namespace OnDi.VerifyAccount.Editor
             icon.sprite = Sprite("badge18.png");
             icon.raycastTarget = true;
 
-            // Mờ/rõ chạy qua CanvasGroup để một lần đổi là cả badge lẫn bong bóng cùng theo.
             var canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
 
             var label = NewLabel("Label", root, "18<sup>+</sup>", new Color32(0x22, 0x33, 0x55, 0xFF), 44f,
@@ -476,8 +440,6 @@ namespace OnDi.VerifyAccount.Editor
             bubble.type = Image.Type.Sliced;
             bubble.raycastTarget = true;
 
-            // Chỉ chữ nằm trong layout; cột "18+" và gạch dọc neo tuyệt đối nên chúng cao
-            // bằng bong bóng dù bong bóng co giãn theo số dòng chữ.
             var bubbleVlg = tooltip.gameObject.AddComponent<VerticalLayoutGroup>();
             bubbleVlg.padding = new RectOffset(
                 (int)(TooltipDividerX + TooltipTextInset), (int)TooltipFrame + 10,
@@ -491,7 +453,7 @@ namespace OnDi.VerifyAccount.Editor
 
             var mark = NewLabel("Mark", tooltip, "18<sup>+</sup>", TextDark, 82f,
                                 TextAlignmentOptions.Center, bold: true, height: 0f);
-            mark.enableWordWrapping = false; // "+" không được rơi xuống dòng dưới
+            mark.enableWordWrapping = false;
             mark.raycastTarget = false;
             StretchColumn(mark.rectTransform, TooltipFrame + TooltipMarkWidth * 0.5f,
                           TooltipMarkWidth, TooltipFrame);
@@ -528,8 +490,6 @@ namespace OnDi.VerifyAccount.Editor
             SavePrefab(root.gameObject, ResourcesDir + "/FloatBadge.prefab");
         }
 
-        // ---- Tiện ích dựng UI ----
-
         static RectTransform NewUi(string name, RectTransform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));
@@ -548,10 +508,6 @@ namespace OnDi.VerifyAccount.Editor
             rect.offsetMax = new Vector2(-right, -top);
         }
 
-        /// <summary>
-        /// Cột cao bằng cha, rộng cố định, đo từ mép trái cha — và đứng ngoài layout group để
-        /// cha co giãn bao nhiêu cột cũng theo.
-        /// </summary>
         static void StretchColumn(RectTransform rect, float centerX, float width, float vInset)
         {
             rect.anchorMin = new Vector2(0f, 0f);
@@ -562,10 +518,6 @@ namespace OnDi.VerifyAccount.Editor
             rect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
         }
 
-        /// <summary>
-        /// Nhãn của một ô nhập. Chừa thêm khoảng trống phía trên để nhãn dính vào ô của nó thay
-        /// vì lơ lửng đều giữa hai ô — layout group chỉ có một mức spacing dùng chung.
-        /// </summary>
         static void FieldLabel(string name, RectTransform content, string text, bool required = false)
         {
             if (required)
@@ -646,8 +598,6 @@ namespace OnDi.VerifyAccount.Editor
             bg.color = FieldBg;
             SetLayoutSize(rect, 0f, FieldHeight, preferHeightOnly: true);
 
-            // TMP_InputField cắt chữ tràn bằng RectMask2D trên "Text Area" chứ không bằng offset
-            // như InputField cũ, nên phải có đúng node này ở giữa.
             var area = NewUi("Text Area", rect);
             Stretch(area, 26f, 6f, 26f, 6f);
             area.gameObject.AddComponent<RectMask2D>();
