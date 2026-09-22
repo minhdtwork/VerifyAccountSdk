@@ -75,7 +75,6 @@ namespace OnDi.VerifyAccount
             agreeHeaderButton.onClick.AddListener(ToggleAgreeGroup);
         }
 
-        /// <summary>Đưa form về trạng thái ban đầu mỗi lần mở.</summary>
         internal void Open()
         {
             _busy = false;
@@ -147,8 +146,6 @@ namespace OnDi.VerifyAccount
                 Refresh();
         }
 
-        // ---- Nhập liệu ----
-
         void OnDobChanged(string raw)
         {
             if (_maskingDate) return;
@@ -165,8 +162,6 @@ namespace OnDi.VerifyAccount
             Clear(dobError);
             Refresh();
         }
-
-        // ---- Trạng thái nút ----
 
         bool PhoneOk => VerifyValidator.IsPhoneValid(phoneInput.text, _settings.phoneRegex);
         bool NameOk => VerifyValidator.IsNameValid(nameInput.text);
@@ -192,8 +187,6 @@ namespace OnDi.VerifyAccount
             if (submitImage != null)
                 submitImage.sprite = can ? submitEnabledSprite : submitDisabledSprite;
         }
-
-        // ---- Gọi server ----
 
         async void SendOtp(bool resend)
         {
@@ -295,8 +288,6 @@ namespace OnDi.VerifyAccount
             Refresh();
         }
 
-        // ---- Điều khoản ----
-
         void ToggleAgreeGroup() => SetAgreeGroupOpen(!agreeGroup.activeSelf);
 
         void SetAgreeGroupOpen(bool open)
@@ -316,8 +307,6 @@ namespace OnDi.VerifyAccount
             }
             Application.OpenURL(url);
         }
-
-        // ---- Dòng lỗi ----
 
         static void Show(TMP_Text target, string message)
         {
