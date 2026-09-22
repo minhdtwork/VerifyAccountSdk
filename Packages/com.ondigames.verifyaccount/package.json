@@ -1,6 +1,6 @@
 {
   "name": "com.ondigames.verifyaccount",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "OnDi Verify Account",
   "description": "Xác thực thông tin người chơi (họ tên, SĐT + OTP, ngày sinh, điều khoản) và badge 18+ nổi neo viền màn hình. Android + iOS, không cần native code.",
   "unity": "2022.3",

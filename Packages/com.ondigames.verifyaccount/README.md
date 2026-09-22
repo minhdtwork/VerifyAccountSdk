@@ -164,7 +164,10 @@ cố định trong prefab, không đi qua Settings — muốn đổi thì sửa 
 Icon 18+, dấu tick và bong bóng tooltip là ảnh vẽ tạm theo bản demo. Thay icon badge bằng
 `badgeSprite` trong Settings, hoặc thay thẳng file trong `Resources/OnDiVerify/Sprites`.
 
-Bong bóng của badge chia hai cột: cột "18+" cố định nằm trong prefab, cột chữ lấy từ
+Số tuổi trên badge và trong bong bóng tự lấy từ `minAge` trong Settings — `16` thì hiện
+"16+", `0` (tắt kiểm tra tuổi) thì vẫn hiện "18+".
+
+Bong bóng của badge chia hai cột: cột số tuổi bên trái, cột chữ lấy từ
 `badgeTooltipText`. Chuỗi mặc định có sẵn ký tự xuống dòng để ngắt câu đúng chỗ như bản
 thiết kế — tự đặt chuỗi khác thì tự chọn chỗ xuống dòng, bong bóng cao theo số dòng.
 

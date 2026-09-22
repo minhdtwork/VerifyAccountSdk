@@ -11,11 +11,14 @@ namespace OnDi.VerifyAccount
     {
         const string PrefOnRight = "OnDi.VerifyAccount.Badge.OnRight";
         const string PrefYRatio = "OnDi.VerifyAccount.Badge.YRatio";
-        const float DefaultYRatio = 0.62f;
+        const float DefaultYRatio = 0.5f;
+        const int FallbackMinAge = 18;
 
         [SerializeField] Image icon;
+        [SerializeField] TMP_Text ageLabel;
         [SerializeField] RectTransform tooltip;
         [SerializeField] TMP_Text tooltipText;
+        [SerializeField] TMP_Text tooltipMark;
         [SerializeField] RectTransform tooltipTail;
         [SerializeField] CanvasGroup canvasGroup;
         [SerializeField] float edgeMargin = 12f;
@@ -23,7 +26,7 @@ namespace OnDi.VerifyAccount
         RectTransform _rect;
         RectTransform _canvasRect;
         Vector2 _dragOffset;
-        bool _onRight = true;
+        bool _onRight;
         float _yRatio = DefaultYRatio;
         float _hideTooltipAt;
         bool _dragging;
@@ -38,7 +41,11 @@ namespace OnDi.VerifyAccount
             if (settings.badgeSprite != null && icon != null) icon.sprite = settings.badgeSprite;
             if (tooltipText != null) tooltipText.text = settings.badgeTooltipText;
 
-            _onRight = PlayerPrefs.GetInt(PrefOnRight, 1) == 1;
+            var age = AgeMark(settings.minAge);
+            if (ageLabel != null) ageLabel.text = age;
+            if (tooltipMark != null) tooltipMark.text = age;
+
+            _onRight = PlayerPrefs.GetInt(PrefOnRight, 0) == 1;
             _yRatio = PlayerPrefs.GetFloat(PrefYRatio, DefaultYRatio);
 
             if (tooltip != null) tooltip.gameObject.SetActive(false);
@@ -82,9 +89,12 @@ namespace OnDi.VerifyAccount
 #endif
         }
 
+        internal static string AgeMark(int minAge) =>
+            (minAge > 0 ? minAge : FallbackMinAge) + "<sup>+</sup>";
+
         internal void ResetPosition()
         {
-            _onRight = true;
+            _onRight = false;
             _yRatio = DefaultYRatio;
             PlayerPrefs.DeleteKey(PrefOnRight);
             PlayerPrefs.DeleteKey(PrefYRatio);

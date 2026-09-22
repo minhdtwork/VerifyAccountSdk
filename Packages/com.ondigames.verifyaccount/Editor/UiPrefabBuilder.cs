@@ -32,6 +32,10 @@ namespace OnDi.VerifyAccount.Editor
         const float ScrollbarInset = 10f;
         const float ScrollbarVInset = 8f;
 
+        const float BadgeSize = 84f;
+        const float BadgeFont = 31f;
+        static readonly string DefaultAgeMark = FloatBadge.AgeMark(0);
+
         const float TooltipWidth = 560f;
         const float TooltipFrame = 19f;
         const float TooltipMarkWidth = 150f;
@@ -419,7 +423,7 @@ namespace OnDi.VerifyAccount.Editor
         {
             var root = NewUi("FloatBadge", null);
             root.anchorMin = root.anchorMax = root.pivot = new Vector2(0.5f, 0.5f);
-            root.sizeDelta = new Vector2(120f, 120f);
+            root.sizeDelta = new Vector2(BadgeSize, BadgeSize);
 
             var icon = root.gameObject.AddComponent<Image>();
             icon.sprite = Sprite("badge18.png");
@@ -427,8 +431,8 @@ namespace OnDi.VerifyAccount.Editor
 
             var canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
 
-            var label = NewLabel("Label", root, "18<sup>+</sup>", new Color32(0x22, 0x33, 0x55, 0xFF), 44f,
-                                 TextAlignmentOptions.Center, bold: true, height: 0f);
+            var label = NewLabel("Label", root, DefaultAgeMark, new Color32(0x22, 0x33, 0x55, 0xFF),
+                                 BadgeFont, TextAlignmentOptions.Center, bold: true, height: 0f);
             Stretch(label.rectTransform);
             label.raycastTarget = false;
 
@@ -451,7 +455,7 @@ namespace OnDi.VerifyAccount.Editor
             var bubbleFitter = tooltip.gameObject.AddComponent<ContentSizeFitter>();
             bubbleFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var mark = NewLabel("Mark", tooltip, "18<sup>+</sup>", TextDark, 82f,
+            var mark = NewLabel("Mark", tooltip, DefaultAgeMark, TextDark, 82f,
                                 TextAlignmentOptions.Center, bold: true, height: 0f);
             mark.enableWordWrapping = false;
             mark.raycastTarget = false;
@@ -479,8 +483,10 @@ namespace OnDi.VerifyAccount.Editor
             var badge = root.gameObject.AddComponent<FloatBadge>();
             var so = new SerializedObject(badge);
             so.FindProperty("icon").objectReferenceValue = icon;
+            so.FindProperty("ageLabel").objectReferenceValue = label;
             so.FindProperty("tooltip").objectReferenceValue = tooltip;
             so.FindProperty("tooltipText").objectReferenceValue = text;
+            so.FindProperty("tooltipMark").objectReferenceValue = mark;
             so.FindProperty("tooltipTail").objectReferenceValue = tail;
             so.FindProperty("canvasGroup").objectReferenceValue = canvasGroup;
             so.ApplyModifiedPropertiesWithoutUndo();

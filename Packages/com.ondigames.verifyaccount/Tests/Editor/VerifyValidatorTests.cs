@@ -176,5 +176,13 @@ namespace OnDi.VerifyAccount.Tests
         {
             Assert.AreEqual(expected, VerifyValidator.FormatCountdown(secondsLeft));
         }
+
+        [TestCase(16, "16<sup>+</sup>")]
+        [TestCase(18, "18<sup>+</sup>")]
+        [TestCase(0, "18<sup>+</sup>")]
+        public void BadgeAgeMark(int minAge, string expected)
+        {
+            Assert.AreEqual(expected, FloatBadge.AgeMark(minAge));
+        }
     }
 }

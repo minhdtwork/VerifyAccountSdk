@@ -379,8 +379,8 @@ public static class FloatButton
 }
 ```
 
-Badge neo vào viền trái hoặc phải màn hình, kéo thả được, chạm vào thì hiện bong bóng cảnh
-báo. Thả tay ở đâu thì nó tự bám về viền gần nhất. Lúc nằm yên badge mờ bớt
+Lần đầu hiện, badge nằm **giữa viền trái** màn hình. Kéo thả được, chạm vào thì hiện bong
+bóng cảnh báo. Thả tay ở đâu thì nó tự bám về viền gần nhất. Lúc nằm yên badge mờ bớt
 (`badgeIdleAlpha`) cho đỡ che game.
 
 Vị trí lưu dưới dạng **tỉ lệ** chứ không phải pixel, nên xoay màn hay đổi thiết bị vẫn về
@@ -399,7 +399,10 @@ VerifyAccountSdk.FloatButton.Hide();
 
 Đổi icon bằng `badgeSprite` trong Settings, đổi chữ trong bong bóng bằng `badgeTooltipText`.
 
-Bong bóng chia hai cột: cột "18+" cố định nằm trong prefab, cột chữ bên phải lấy từ
+Số tuổi trên badge và trong bong bóng tự lấy từ `minAge` trong Settings: đặt `16` thì cả
+hai chỗ đều hiện "16+". `minAge` bằng `0` (tắt kiểm tra tuổi) thì vẫn hiện "18+".
+
+Bong bóng chia hai cột: cột số tuổi bên trái, cột chữ bên phải lấy từ
 `badgeTooltipText`. Chuỗi mặc định có sẵn ký tự xuống dòng để ngắt đúng bốn dòng như bản
 thiết kế — tự đặt chuỗi khác thì tự chọn chỗ xuống dòng, bong bóng cao theo số dòng. Hằng
 `VerifyAccountSettings.DefaultBadgeTooltipText` giữ nguyên chuỗi mặc định đó.
@@ -584,7 +587,7 @@ trên `VerifyAccountSdk.Settings` thì được.
 | `sortingOrder` | `int` | `32000` | Sorting order — để cao để luôn nằm trên UI game |
 | `phoneRegex` | `string` | `^(0\|\+84)(3\|5\|7\|8\|9)\d{8}$` | Luật số điện thoại. Trống là chấp nhận mọi chuỗi khác rỗng |
 | `otpLength` | `int` | `6` | Số ký tự của mã OTP |
-| `minAge` | `int` | `0` | Tuổi tối thiểu theo ngày sinh. `0` là không kiểm tra |
+| `minAge` | `int` | `0` | Tuổi tối thiểu theo ngày sinh, cũng là số hiện trên badge. `0` là không kiểm tra, badge hiện "18+" |
 | `otpTtlSeconds` | `int` | `180` | Đồng hồ đếm ngược "OTP hết hạn sau" |
 | `resendCooldownSeconds` | `int` | `60` | Khoá nút "Gửi lại" bao nhiêu giây sau mỗi lần gửi |
 | `showSkipButton` | `bool` | `true` | Hiện nút "Bỏ qua". Đè lúc chạy bằng `SetSkipButtonVisible()` |
@@ -676,7 +679,7 @@ phần dư được cuộn — thanh cuộn ở chế độ *auto hide* nên ch�
 |---|---|---|
 | `OnDi.VerifyAccount.Verified` | `int` | `1` là đã xác thực |
 | `OnDi.VerifyAccount.VerifiedAt` | `string` | Mốc UTC, định dạng round-trip (`"o"`) |
-| `OnDi.VerifyAccount.Badge.OnRight` | `int` | Badge đang bám viền phải hay trái |
+| `OnDi.VerifyAccount.Badge.OnRight` | `int` | Badge đang bám viền phải hay trái. Chưa kéo lần nào là trái |
 | `OnDi.VerifyAccount.Badge.YRatio` | `float` | Vị trí dọc của badge, `0`–`1` |
 | `OnDi.VerifyAccount.Playtime.Day` | `string` | Ngày đang đếm, `yyyy-MM-dd` |
 | `OnDi.VerifyAccount.Playtime.Seconds` | `float` | Số giây đã chơi trong ngày đó |
